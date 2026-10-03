@@ -3,6 +3,14 @@ plugins {
     id 'net.neoforged.moddev'
 }
 
+// Dev-only visual check (never in the release jar): -PspiritPreview with -PquickPlayWorld screenshots the spirits.
+sourceSets {
+    devpreview {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
 neoForge {
     version = neoforge_version
     // Automatically enable NeoForge AccessTransformers if the file exists
@@ -22,15 +30,24 @@ neoForge {
                 programArguments.addAll('--quickPlaySingleplayer', project.property('quickPlayWorld').toString())
                 systemProperty('illuminations_reimagined.debugCounts', 'true')
             }
+            if (project.hasProperty('spiritPreview')) {
+                programArguments.addAll('--width', '1920', '--height', '1080')
+                systemProperty('illuminations_reimagined.spiritPreview', 'true')
+                systemProperty('illuminations_reimagined.galleryDir', layout.buildDirectory.dir('gallery').get().asFile.absolutePath)
+            }
         }
         // Client-only mod: no server or data runs.
     }
     mods {
         "${mod_id}" {
             sourceSet sourceSets.main
+            if (project.hasProperty('spiritPreview')) {
+                sourceSet sourceSets.devpreview
+            }
         }
     }
 }
+neoForge.addModdingDependenciesTo(sourceSets.devpreview)
 
 // Implement mcgradleconventions loader attribute
 def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)

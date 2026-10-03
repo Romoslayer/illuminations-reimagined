@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.1.0 — unreleased (Minecraft 26.2 / 26.3, Fabric + NeoForge)
+## 0.1.1 — unreleased
+
+No player-facing changes yet.
+
+## 0.1.0 — 2026-10-03 (Minecraft 26.2 / 26.3, Fabric + NeoForge)
 
 First version of Illuminations Reimagined, an unofficial continuation of Illuminations 1.10.2 (Ladysnake, GPL-3.0-or-later).
 
