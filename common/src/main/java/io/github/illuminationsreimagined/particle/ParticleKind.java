@@ -31,7 +31,9 @@ public enum ParticleKind {
     WILL_O_WISP(c -> c.willOWisps.maxCount),
     WISP_EMBER(c -> c.willOWisps.maxCount * 24),
     CHORUS_PETAL(c -> c.chorusPetals.maxCount),
-    PRISMARINE_CRYSTAL(c -> c.prismarineCrystals.maxCount);
+    PRISMARINE_CRYSTAL(c -> c.prismarineCrystals.maxCount),
+    PUMPKIN_SPIRIT(c -> c.halloweenSpirits.maxCount),
+    POLTERGEIST(c -> c.halloweenSpirits.maxCount);
 
     private final ToIntFunction<IlluminationsConfig> cap;
 

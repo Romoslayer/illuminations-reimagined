@@ -12,6 +12,7 @@
   "config.illuminations_reimagined.section.eyes": "Eyes in the Dark",
   "config.illuminations_reimagined.section.wisps": "Will o' Wisps",
   "config.illuminations_reimagined.section.chorus": "Chorus Petals and Prismarine Crystals",
+  "config.illuminations_reimagined.section.spirits": "Halloween Spirits",
 
   "config.illuminations_reimagined.enabled": "Ambient Effects",
   "config.illuminations_reimagined.enabled.tooltip": "Turns every effect from this mod on or off.",
@@ -52,6 +53,15 @@
   "config.illuminations_reimagined.wisps.soulSandValleyRate.tooltip": "How often wisps rise from soul sand and soul soil in Soul Sand Valleys.",
   "config.illuminations_reimagined.wisps.fromSoulLanterns": "Soul Lantern Wisps",
   "config.illuminations_reimagined.wisps.fromSoulLanterns.tooltip": "Wisps occasionally drift out of soul lanterns.",
+
+  "config.illuminations_reimagined.spirits.mode": "Halloween Spirits",
+  "config.illuminations_reimagined.spirits.mode.tooltip": "Pumpkin spirits and poltergeists, at night only. \"In October\" follows your computer's date.",
+  "config.illuminations_reimagined.spirits.fromJackOLanterns": "Pumpkin Spirits",
+  "config.illuminations_reimagined.spirits.fromJackOLanterns.tooltip": "Spirits slip out of jack o'lanterns.",
+  "config.illuminations_reimagined.spirits.fromSkulls": "Skull Poltergeists",
+  "config.illuminations_reimagined.spirits.fromSkulls.tooltip": "Poltergeists rise from skeleton skulls.",
+  "config.illuminations_reimagined.spirits.fromUndeadDeaths": "Undead Poltergeists",
+  "config.illuminations_reimagined.spirits.fromUndeadDeaths.tooltip": "Poltergeists sometimes escape from undead mobs that die at night.",
 
   "config.illuminations_reimagined.chorus.multiplier": "Chorus Petals",
   "config.illuminations_reimagined.chorus.multiplier.tooltip": "How many petals drift from chorus flowers. ×0 turns them off.",

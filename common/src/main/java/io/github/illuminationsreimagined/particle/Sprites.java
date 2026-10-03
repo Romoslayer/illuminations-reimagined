@@ -20,6 +20,7 @@ package io.github.illuminationsreimagined.particle;
 
 import io.github.illuminationsreimagined.IlluminationsReimagined;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
@@ -42,12 +43,23 @@ public final class Sprites {
     public static final Identifier[] PRISMARINE_CRYSTAL = {id("prismarine_crystal_0"), id("prismarine_crystal_1"), id("prismarine_crystal_2")};
     public static final Identifier[] WISP = {id("wisp_0"), id("wisp_1"), id("wisp_2"), id("wisp_3")};
     public static final Identifier WISP_EMBER = id("wisp_ember");
+    public static final Identifier[] PUMPKIN_SPIRIT = {id("pumpkin_spirit_0"), id("pumpkin_spirit_1"), id("pumpkin_spirit_2"), id("pumpkin_spirit_3")};
+    public static final Identifier[] POLTERGEIST = {id("poltergeist_0"), id("poltergeist_1"), id("poltergeist_2"), id("poltergeist_3")};
 
     private Sprites() {
     }
 
     public static TextureAtlasSprite get(Identifier id) {
         return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.PARTICLES).getSprite(id);
+    }
+
+    /**
+     * Whether a texture actually exists in the atlas. Effects whose artwork has not been added yet stay dormant
+     * instead of rendering the missing-texture checkerboard.
+     */
+    public static boolean isAvailable(Identifier id) {
+        TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.PARTICLES);
+        return atlas.getSprite(id) != atlas.missingSprite();
     }
 
     private static Identifier id(String path) {

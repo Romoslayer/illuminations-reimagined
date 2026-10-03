@@ -18,11 +18,14 @@
  */
 package io.github.illuminationsreimagined.particle;
 
+import io.github.illuminationsreimagined.config.IlluminationsConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Base class for every particle spawned by the mod.
@@ -60,7 +63,20 @@ public abstract class AmbientParticle extends SingleQuadParticle {
         this.yo = this.y;
         this.zo = this.z;
         this.oRoll = this.roll;
+        if (this.age % 20 == 0 && this.isFarFromCamera()) {
+            // The player moved away (teleport, fast travel): drop it instead of ticking it and counting it against the cap.
+            this.remove();
+            return;
+        }
         this.tickAmbient();
+    }
+
+    private boolean isFarFromCamera() {
+        double limit = IlluminationsConfig.get().spawnRadius * 1.5 + 16.0;
+        Vec3 camera = Minecraft.getInstance().gameRenderer.mainCamera().position();
+        double dx = this.x - camera.x;
+        double dz = this.z - camera.z;
+        return dx * dx + dz * dz > limit * limit;
     }
 
     /** Per-tick behaviour. Previous-position bookkeeping has already been done. */

@@ -21,32 +21,30 @@ package io.github.illuminationsreimagined.particle;
 import net.minecraft.client.multiplayer.ClientLevel;
 
 /**
- * A will o' wisp: a flickering soul-flame that wanders slowly and sheds faint embers.
- *
- * <p>The original rendered a textured 3D entity model from inside the particle renderer using its own immediate-mode
- * buffer (incompatible with batching and with Sodium/Iris). The wisp is now an animated billboard plus trailing
- * ember particles, rendered entirely through the vanilla particle pipeline.</p>
+ * A pumpkin spirit: a small glowing jack o'lantern face that slips out of a jack o'lantern on Halloween nights,
+ * bobs around mischievously and trails orange embers. Its sprites are painted in final colours (not tinted).
  */
-public class WillOWispParticle extends WanderingSpiritParticle {
-    public WillOWispParticle(ClientLevel level, double x, double y, double z) {
-        super(level, x, y, z, Sprites.WISP, 3, 0.95F);
-        this.quadSize = 0.22F + this.random.nextFloat() * 0.08F;
-        this.lifetime = 300 + this.random.nextInt(400);
-        this.setColor(0.55F, 0.95F, 1.0F);
+public class PumpkinSpiritParticle extends WanderingSpiritParticle {
+    public PumpkinSpiritParticle(ClientLevel level, double x, double y, double z) {
+        super(level, x, y, z, Sprites.PUMPKIN_SPIRIT, 4, 1.0F);
+        this.quadSize = 0.2F + this.random.nextFloat() * 0.06F;
+        this.lifetime = 300 + this.random.nextInt(300);
     }
 
     @Override
     public ParticleKind kind() {
-        return ParticleKind.WILL_O_WISP;
+        return ParticleKind.PUMPKIN_SPIRIT;
+    }
+
+    @Override
+    protected double steering() {
+        return 0.004;
     }
 
     @Override
     protected void tickAppearance() {
-        float flicker = 0.85F + this.random.nextFloat() * 0.15F;
-        this.rCol = 0.5F * flicker;
-        this.gCol = 0.95F * flicker;
-        if (!this.fadingOut && this.age % 3 == 0) {
-            this.shedEmber(this.rCol, this.gCol, this.bCol);
+        if (!this.fadingOut && this.age % 4 == 0) {
+            this.shedEmber(1.0F, 0.55F + this.random.nextFloat() * 0.2F, 0.1F);
         }
     }
 }

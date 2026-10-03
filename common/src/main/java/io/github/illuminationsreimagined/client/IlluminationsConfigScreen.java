@@ -93,6 +93,17 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
         this.list.addSmall(
                 slider("maxCount", 0, 50, wisps.maxCount, ConfigOptions::number, v -> wisps.maxCount = v));
 
+        IlluminationsConfig.HalloweenSpirits spirits = c.halloweenSpirits;
+        this.list.addHeader(Component.translatable(key("section.spirits")));
+        this.list.addSmall(
+                cycle("spirits.mode", SeasonalMode.class, spirits.mode, v -> spirits.mode = v),
+                slider("maxCount", 0, 50, spirits.maxCount, ConfigOptions::number, v -> spirits.maxCount = v));
+        this.list.addSmall(
+                bool("spirits.fromJackOLanterns", spirits.fromJackOLanterns, v -> spirits.fromJackOLanterns = v),
+                bool("spirits.fromSkulls", spirits.fromSkulls, v -> spirits.fromSkulls = v));
+        this.list.addSmall(
+                bool("spirits.fromUndeadDeaths", spirits.fromUndeadDeaths, v -> spirits.fromUndeadDeaths = v));
+
         IlluminationsConfig.ChorusPetals petals = c.chorusPetals;
         this.list.addHeader(Component.translatable(key("section.chorus")));
         this.list.addSmall(

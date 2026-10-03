@@ -26,6 +26,7 @@ import io.github.illuminationsreimagined.config.SeasonalMode;
 import io.github.illuminationsreimagined.config.SpawnRate;
 import io.github.illuminationsreimagined.particle.ParticleKind;
 import io.github.illuminationsreimagined.particle.ParticleTracker;
+import io.github.illuminationsreimagined.particle.Sprites;
 import io.github.illuminationsreimagined.world.BiomeGroup;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
@@ -55,6 +56,7 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             config.biomeGroup(BiomeGroup.PLAINS).glowworms = SpawnRate.HIGH;
             config.eyesInTheDark.mode = SeasonalMode.ALWAYS;
             config.eyesInTheDark.rate = SpawnRate.HIGH;
+            config.halloweenSpirits.mode = SeasonalMode.ALWAYS;
         });
 
         try (TestSingleplayerContext world = context.worldBuilder().create()) {
@@ -76,6 +78,11 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             fill(world, x - 20, y - 1, z - 8, x - 8, y + 6, z + 8, "stone hollow");
             fill(world, x - 19, y, z - 7, x - 9, y + 5, z + 7, "water");
             world.getServer().runCommand(String.format("setblock %d %d %d sea_lantern", x - 10, y + 2, z));
+            // Halloween spirit sources: several jack o'lanterns and skeleton skulls.
+            for (int i = 0; i < 6; i++) {
+                world.getServer().runCommand(String.format("setblock %d %d %d jack_o_lantern", x + 2 + i, y, z - 10));
+                world.getServer().runCommand(String.format("setblock %d %d %d skeleton_skull", x + 2 + i, y, z + 10));
+            }
             // Soul lantern.
             world.getServer().runCommand(String.format("setblock %d %d %d soul_lantern", x - 4, y, z - 6));
             // Face the chorus flower / pool.
@@ -95,6 +102,14 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             require(night.get(ParticleKind.CHORUS_PETAL) > 0, "chorus flower sheds petals");
             require(night.get(ParticleKind.PRISMARINE_CRYSTAL) > 0, "sea lantern spawns crystals");
             require(night.get(ParticleKind.PLANKTON) > 0, "plankton spawns in dark water");
+            boolean spiritArt = context.computeOnClient(c -> Sprites.isAvailable(Sprites.PUMPKIN_SPIRIT[0]) && Sprites.isAvailable(Sprites.POLTERGEIST[0]));
+            int spirits = night.get(ParticleKind.PUMPKIN_SPIRIT) + night.get(ParticleKind.POLTERGEIST);
+            if (spiritArt) {
+                require(night.get(ParticleKind.PUMPKIN_SPIRIT) > 0, "jack o'lanterns release pumpkin spirits");
+                require(night.get(ParticleKind.POLTERGEIST) > 0, "skeleton skulls release poltergeists");
+            } else {
+                require(spirits == 0, "spirits stay dormant while their textures are missing");
+            }
             for (ParticleKind kind : ParticleKind.values()) {
                 int cap = context.computeOnClient(c -> kind.cap(IlluminationsConfig.get()));
                 require(night.get(kind) <= cap, kind + " respects its cap (" + night.get(kind) + " <= " + cap + ")");

@@ -70,6 +70,7 @@ public final class IlluminationsConfig {
     public WillOWisps willOWisps = new WillOWisps();
     public ChorusPetals chorusPetals = new ChorusPetals();
     public PrismarineCrystals prismarineCrystals = new PrismarineCrystals();
+    public HalloweenSpirits halloweenSpirits = new HalloweenSpirits();
 
     /** Per-biome-group overrides, keyed by {@link BiomeGroup#key()}. */
     public Map<String, BiomeGroupSettings> biomeGroups = defaultBiomeGroups();
@@ -122,6 +123,18 @@ public final class IlluminationsConfig {
     public static final class PrismarineCrystals {
         public boolean enabled = true;
         public int maxCount = 150;
+    }
+
+    public static final class HalloweenSpirits {
+        /** When pumpkin spirits and poltergeists appear (only at night). */
+        public SeasonalMode mode = SeasonalMode.SEASONAL;
+        /** Pumpkin spirits slip out of jack o'lanterns. */
+        public boolean fromJackOLanterns = true;
+        /** Poltergeists rise from skeleton skulls. */
+        public boolean fromSkulls = true;
+        /** Poltergeists sometimes escape from undead that die at night. */
+        public boolean fromUndeadDeaths = true;
+        public int maxCount = 16;
     }
 
     public static final class BiomeGroupSettings {
@@ -235,6 +248,7 @@ public final class IlluminationsConfig {
         if (this.willOWisps == null) this.willOWisps = new WillOWisps();
         if (this.chorusPetals == null) this.chorusPetals = new ChorusPetals();
         if (this.prismarineCrystals == null) this.prismarineCrystals = new PrismarineCrystals();
+        if (this.halloweenSpirits == null) this.halloweenSpirits = new HalloweenSpirits();
 
         this.fireflies.maxCount = Mth.clamp(this.fireflies.maxCount, 0, 2000);
         this.fireflies.coreBrightness = Mth.clamp(this.fireflies.coreBrightness, 0, 100);
@@ -249,6 +263,8 @@ public final class IlluminationsConfig {
         this.chorusPetals.multiplier = Mth.clamp(this.chorusPetals.multiplier, 0, 10);
         this.chorusPetals.maxCount = Mth.clamp(this.chorusPetals.maxCount, 0, 4000);
         this.prismarineCrystals.maxCount = Mth.clamp(this.prismarineCrystals.maxCount, 0, 2000);
+        if (this.halloweenSpirits.mode == null) this.halloweenSpirits.mode = SeasonalMode.SEASONAL;
+        this.halloweenSpirits.maxCount = Mth.clamp(this.halloweenSpirits.maxCount, 0, 200);
 
         Map<String, BiomeGroupSettings> groups = new LinkedHashMap<>();
         for (BiomeGroup group : BiomeGroup.values()) {

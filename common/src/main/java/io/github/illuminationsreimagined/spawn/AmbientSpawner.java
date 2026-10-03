@@ -60,7 +60,7 @@ public final class AmbientSpawner {
     private static final float GLOWWORM_CHANCE = 0.03F;
     private static final float PLANKTON_CHANCE = 0.05F;
     private static final float EYES_CHANCE = 0.002F;
-    private static final float WISP_CHANCE = 0.002F;
+    private static final float WISP_CHANCE = 0.01F;
     private static final double EYES_MIN_PLAYER_DISTANCE = 10.0;
 
     private static final RandomSource RANDOM = RandomSource.create();
@@ -70,6 +70,8 @@ public final class AmbientSpawner {
     /** Development aid: -Dilluminations_reimagined.debugCounts=true logs live particle counts every 10 seconds. */
     private static final boolean DEBUG_COUNTS = Boolean.getBoolean("illuminations_reimagined.debugCounts");
     private static int debugTimer;
+    private static long timedNanos;
+    private static int timedTicks;
 
     private AmbientSpawner() {
     }
@@ -102,6 +104,7 @@ public final class AmbientSpawner {
         int verticalRange = Math.min(radius / 2, 24);
         float density = config.densityFactor();
         boolean night = WorldConditions.isNight(level);
+        long start = System.nanoTime();
 
         for (int i = 0; i < config.samplesPerTick; i++) {
             double angle = RANDOM.nextDouble() * Math.PI * 2.0;
@@ -118,6 +121,18 @@ public final class AmbientSpawner {
             }
             sample(level, config, density, night, minecraft.player);
         }
+        timedNanos += System.nanoTime() - start;
+        timedTicks++;
+    }
+
+    /** Average time the spawner spent per tick since the last reset, in microseconds (for profiling and tests). */
+    public static double averageMicrosPerTick() {
+        return timedTicks == 0 ? 0.0 : timedNanos / 1000.0 / timedTicks;
+    }
+
+    public static void resetTiming() {
+        timedNanos = 0;
+        timedTicks = 0;
     }
 
     private static void sample(ClientLevel level, IlluminationsConfig config, float density, boolean night, Player player) {
@@ -139,8 +154,8 @@ public final class AmbientSpawner {
                     && ParticleTracker.hasRoom(ParticleKind.EYES)) {
                 trySpawnEyes(level, player);
             }
-            if (group == BiomeGroup.SOUL_SAND_VALLEY && roll(WISP_CHANCE, config.willOWisps.soulSandValleyRate, density)
-                    && ParticleTracker.hasRoom(ParticleKind.WILL_O_WISP)) {
+        } else if (group == BiomeGroup.SOUL_SAND_VALLEY && state.is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
+            if (roll(WISP_CHANCE, config.willOWisps.soulSandValleyRate, density) && ParticleTracker.hasRoom(ParticleKind.WILL_O_WISP)) {
                 trySpawnValleyWisp(level);
             }
         } else if (settings.plankton != SpawnRate.DISABLED && state.getFluidState().is(FluidTags.WATER)
@@ -218,11 +233,22 @@ public final class AmbientSpawner {
         ParticleTracker.spawn(new EyesParticle(level, POS.getX() + 0.5, POS.getY() + 0.4 + RANDOM.nextDouble() * 0.4, POS.getZ() + 0.5));
     }
 
-    /** Valley wisps rise from soul sand and soul soil. (The original spawned them inside the block itself.) */
+    /**
+     * Valley wisps rise from soul sand and soul soil. The sample landed inside such a block; look a few blocks up for
+     * the open air above it. (The original spawned the wisp inside the block itself.)
+     */
     private static void trySpawnValleyWisp(ClientLevel level) {
-        PROBE.set(POS).move(Direction.DOWN);
-        if (level.getBlockState(PROBE).is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
-            ParticleTracker.spawn(new WillOWispParticle(level, POS.getX() + 0.5, POS.getY() + 0.6, POS.getZ() + 0.5));
+        PROBE.set(POS);
+        for (int i = 0; i < 4; i++) {
+            PROBE.move(Direction.UP);
+            BlockState above = level.getBlockState(PROBE);
+            if (above.isAir()) {
+                ParticleTracker.spawn(new WillOWispParticle(level, PROBE.getX() + 0.5, PROBE.getY() + 0.6, PROBE.getZ() + 0.5));
+                return;
+            }
+            if (!above.is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
+                return;
+            }
         }
     }
 

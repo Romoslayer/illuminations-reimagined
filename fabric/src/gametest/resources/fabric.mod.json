@@ -6,7 +6,8 @@
   "environment": "client",
   "entrypoints": {
     "fabric-client-gametest": [
-      "io.github.illuminationsreimagined.fabric.gametest.AmbientEffectsClientGameTest"
+      "io.github.illuminationsreimagined.fabric.gametest.AmbientEffectsClientGameTest",
+      "io.github.illuminationsreimagined.fabric.gametest.TerrainSurveyClientGameTest"
     ]
   },
   "depends": {

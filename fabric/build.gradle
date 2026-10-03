@@ -79,3 +79,13 @@ fabricApi {
         enableClientGameTests = true
     }
 }
+
+// ./gradlew :fabric:runClientGameTest -Psurvey also runs the terrain survey (real worldgen, default settings).
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+    if (project.hasProperty('survey')) {
+        systemProperty('illuminations_reimagined.survey', 'true')
+        if (project.hasProperty('surveyStops')) {
+            systemProperty('illuminations_reimagined.surveyStops', project.property('surveyStops').toString())
+        }
+    }
+}

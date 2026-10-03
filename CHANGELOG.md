@@ -21,6 +21,8 @@ First version of Illuminations Reimagined, an unofficial continuation of Illumin
 - Biome rules use biome tags (vanilla and `c:` conventions) instead of `Biome.Category` and pre-1.18 biome IDs.
 - Particles are created directly instead of being registered as particle types.
 - Will o' wisps are animated billboards with ember trails instead of entity models.
+- Pumpkin spirits and poltergeists (Halloween, night only) are animated billboards sharing the wisps' movement. Poltergeists from undead deaths use the client's death event. Both stay dormant until their textures exist.
+- Particles left far behind the player (teleports, fast travel) are removed instead of ticking until they expire.
 
 ### Fixed
 - Fireflies teleporting onto light sources (the light search never returned "none").

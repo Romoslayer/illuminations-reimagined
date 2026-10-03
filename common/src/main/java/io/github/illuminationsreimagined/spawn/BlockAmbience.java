@@ -60,6 +60,10 @@ public final class BlockAmbience {
             if (config.willOWisps.fromSoulLanterns && random.nextInt(60) == 0 && ParticleTracker.hasRoom(ParticleKind.WILL_O_WISP)) {
                 ParticleTracker.spawn(new WillOWispParticle(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5));
             }
+        } else if (state.is(Blocks.JACK_O_LANTERN)) {
+            HalloweenSpirits.fromJackOLantern(level, pos, random, config);
+        } else if (state.is(Blocks.SKELETON_SKULL) || state.is(Blocks.SKELETON_WALL_SKULL)) {
+            HalloweenSpirits.fromSkull(level, pos, random, config);
         }
     }
 
