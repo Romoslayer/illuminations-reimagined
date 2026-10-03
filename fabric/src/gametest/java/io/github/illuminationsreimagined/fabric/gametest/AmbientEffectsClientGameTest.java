@@ -77,7 +77,10 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             // Covered (dark) water pool with a sea lantern at one end.
             fill(world, x - 20, y - 1, z - 8, x - 8, y + 6, z + 8, "stone hollow");
             fill(world, x - 19, y, z - 7, x - 9, y + 5, z + 7, "water");
-            world.getServer().runCommand(String.format("setblock %d %d %d sea_lantern", x - 10, y + 2, z));
+            // Several lanterns so random display ticks reach one often enough for a reliable check.
+            for (int[] l : new int[][]{{-10, 2, 0}, {-12, 1, -4}, {-12, 1, 4}, {-15, 3, 0}}) {
+                world.getServer().runCommand(String.format("setblock %d %d %d sea_lantern", x + l[0], y + l[1], z + l[2]));
+            }
             // Halloween spirit sources: 5x5 patches of jack o'lanterns and skeleton skulls close to the player, so random
             // display ticks reach them often enough for a reliable test (each has a 1-in-100 chance per hit).
             fill(world, x + 3, y, z - 7, x + 7, y, z - 3, "jack_o_lantern");

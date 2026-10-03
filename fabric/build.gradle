@@ -112,3 +112,11 @@ tasks.matching { it.name == 'runClientGameTest' }.configureEach {
         systemProperty('illuminations_reimagined.galleryDir', layout.buildDirectory.dir('gallery').get().asFile.absolutePath)
     }
 }
+
+// ./gradlew :fabric:runClientGameTest -PfireflyShot saves firefly gallery shots to fabric/build/gallery/fireflies.
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+    if (project.hasProperty('fireflyShot')) {
+        systemProperty('illuminations_reimagined.fireflyShot', 'true')
+        systemProperty('illuminations_reimagined.galleryDir', layout.buildDirectory.dir('gallery').get().asFile.absolutePath)
+    }
+}

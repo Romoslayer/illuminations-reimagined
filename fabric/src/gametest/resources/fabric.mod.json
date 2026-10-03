@@ -10,7 +10,8 @@
       "io.github.illuminationsreimagined.fabric.gametest.TerrainSurveyClientGameTest",
       "io.github.illuminationsreimagined.fabric.gametest.GalleryClientGameTest",
       "io.github.illuminationsreimagined.fabric.gametest.SpiritPreviewClientGameTest",
-      "io.github.illuminationsreimagined.fabric.gametest.ShowcaseClientGameTest"
+      "io.github.illuminationsreimagined.fabric.gametest.ShowcaseClientGameTest",
+      "io.github.illuminationsreimagined.fabric.gametest.FireflyShotClientGameTest"
     ]
   },
   "depends": {

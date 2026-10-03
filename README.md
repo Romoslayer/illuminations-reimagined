@@ -9,6 +9,10 @@ updated for modern Minecraft on Fabric and NeoForge, with bug fixes, rewritten s
 Illuminations Reimagined is a **client-side** mod that adds ambient lights to make dark places feel alive.
 It works on any server, including vanilla servers, and nothing needs to be installed server-side.
 
+![Fireflies drifting between the trees of a meadow at night](artwork/fireflies-at-night.png)
+
+![Will o' wisps, a pumpkin spirit and a poltergeist in flight at night, trailing sparks](artwork/spirits-in-flight.png)
+
 ## Effects
 
 | Effect | Where / when |
@@ -18,7 +22,8 @@ It works on any server, including vanilla servers, and nothing needs to be insta
 | **Plankton** | Tiny glowing specks in dark ocean water. |
 | **Chorus petals** | Drifting from chorus flowers; a burst of petals when a flower breaks. |
 | **Prismarine crystals** | Floating in the water around sea lanterns. |
-| **Will o' wisps** | Rising from soul sand in Soul Sand Valleys and drifting out of soul lanterns. |
+| **Will o' wisps** | Small glowing spirits that rise from soul sand in Soul Sand Valleys and slip out of soul lanterns, darting about and leaving trails of sparks that fade from white to cyan. |
+| **Pumpkin spirits and poltergeists** | Halloween spirits (October by default, at night): pumpkin spirits burst out of jack o'lanterns trailing fiery sparks; poltergeists rise from skeleton skulls and from undead that die at night. |
 | **Eyes in the dark** | In October (configurable), watching from pitch-black spots. They vanish if you get close or bring light. |
 
 ## Supported versions
