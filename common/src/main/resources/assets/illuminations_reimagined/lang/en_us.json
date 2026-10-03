@@ -18,6 +18,7 @@
   "config.illuminations_reimagined.density": "Density",
   "config.illuminations_reimagined.density.tooltip": "Scales how often fireflies, glowworms, plankton and will o' wisps spawn. 100% is the default; 0% stops them appearing.",
   "config.illuminations_reimagined.biomes": "Biome Settings...",
+  "config.illuminations_reimagined.dimensions": "Dimensions...",
   "config.illuminations_reimagined.maxCount": "Maximum at Once",
   "config.illuminations_reimagined.maxCount.tooltip": "No more than this many of this effect exist at the same time.",
 
@@ -68,6 +69,8 @@
   "config.illuminations_reimagined.prismarine.maxCount.tooltip": "No more than this many crystals exist at the same time.",
 
   "config.illuminations_reimagined.biomes.title": "Biome Settings",
+  "config.illuminations_reimagined.dimensions.title": "Dimensions",
+  "config.illuminations_reimagined.dimensions.header": "Effects appear in dimensions that are on",
   "config.illuminations_reimagined.biome.fireflies": "Fireflies",
   "config.illuminations_reimagined.biome.fireflies.tooltip": "How often fireflies appear here at night.",
   "config.illuminations_reimagined.biome.glowworms": "Glowworms",

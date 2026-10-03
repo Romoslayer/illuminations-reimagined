@@ -44,6 +44,7 @@ hand-edit; invalid values are corrected on load. Options include:
 * A **maximum live count** for every effect, so particle numbers can never run away.
 * Fireflies: spawn always (day too), spawn underground, core brightness, rainbow, light attraction, and orange autumn colours in October (off by default; not in the original).
 * Per-biome-group firefly, glowworm and plankton rates (`DISABLED` / `LOW` / `MEDIUM` / `HIGH`) and firefly colour.
+* A switch per dimension, to turn every effect off in a dimension (vanilla or modded) where you do not want them.
 * Eyes in the dark: `SEASONAL` (October), `ALWAYS` or `DISABLED`, and a spawn rate.
 
 Biomes are classified with vanilla and `c:` convention biome tags, so modded biomes that tag themselves
@@ -89,8 +90,8 @@ in `versions/<mc>.properties`.
 
 * **Code:** GPL-3.0-or-later. This is a modified version of Illuminations, © 2021 Ladysnake, GPL-3.0-or-later;
   modifications © 2026 Romoslayer. See [`LICENSE`](LICENSE) and [`NOTICE.md`](NOTICE.md).
-* **Textures:** none of the original Illuminations textures or other artwork (All Rights Reserved, Ladysnake) are
-  used in this project. See [`LICENSE-ASSETS.md`](LICENSE-ASSETS.md).
+* **Textures and artwork:** GPL-3.0-or-later, like the code. None of the original Illuminations textures or other
+  artwork (All Rights Reserved, Ladysnake) are used in this project. See [`LICENSE-ASSETS.md`](LICENSE-ASSETS.md).
 * **Source:** the complete corresponding source code is available in this repository.
 
 ## Credits

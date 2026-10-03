@@ -24,7 +24,9 @@ import com.google.gson.JsonParseException;
 import io.github.illuminationsreimagined.IlluminationsReimagined;
 import io.github.illuminationsreimagined.platform.Services;
 import io.github.illuminationsreimagined.world.BiomeGroup;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -34,9 +36,13 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Client configuration, stored as human-editable JSON in {@code config/illuminations_reimagined.json}.
@@ -69,6 +75,12 @@ public final class IlluminationsConfig {
 
     /** Per-biome-group overrides, keyed by {@link BiomeGroup#key()}. */
     public Map<String, BiomeGroupSettings> biomeGroups = defaultBiomeGroups();
+    /**
+     * Dimensions, by ID (for example {@code minecraft:the_end} or a modded one), where no effects appear at all. Empty by
+     * default, so effects appear wherever their biome or block rules allow, as in the original mod.
+     */
+    public List<String> disabledDimensions = new ArrayList<>();
+    private transient Set<Identifier> disabledDimensionIds = Set.of();
 
     public static final class Fireflies {
         public int maxCount = 160;
@@ -173,6 +185,24 @@ public final class IlluminationsConfig {
         return instance;
     }
 
+    /** False when the user switched effects off for this level's dimension. */
+    public boolean isDimensionEnabled(Level level) {
+        return !this.disabledDimensionIds.contains(level.dimension().identifier());
+    }
+
+    public boolean isDimensionEnabled(Identifier dimension) {
+        return !this.disabledDimensionIds.contains(dimension);
+    }
+
+    public void setDimensionEnabled(Identifier dimension, boolean enabled) {
+        String id = dimension.toString();
+        this.disabledDimensions.remove(id);
+        if (!enabled) {
+            this.disabledDimensions.add(id);
+        }
+        this.disabledDimensionIds = parseDimensions(this.disabledDimensions);
+    }
+
     public BiomeGroupSettings biomeGroup(BiomeGroup group) {
         return this.biomeGroups.get(group.key());
     }
@@ -270,6 +300,25 @@ public final class IlluminationsConfig {
             groups.put(group.key(), settings);
         }
         this.biomeGroups = groups;
+        // Keep valid, distinct dimension IDs in their normal form ("the_end" becomes "minecraft:the_end").
+        this.disabledDimensionIds = parseDimensions(this.disabledDimensions);
+        List<String> dimensions = new ArrayList<>();
+        this.disabledDimensionIds.forEach(id -> dimensions.add(id.toString()));
+        this.disabledDimensions = dimensions;
+    }
+
+    /** The valid IDs in the list, in order and without duplicates; anything unparseable is dropped. */
+    private static Set<Identifier> parseDimensions(List<String> ids) {
+        Set<Identifier> parsed = new LinkedHashSet<>();
+        if (ids != null) {
+            for (String id : ids) {
+                Identifier identifier = id == null ? null : Identifier.tryParse(id.trim());
+                if (identifier != null) {
+                    parsed.add(identifier);
+                }
+            }
+        }
+        return parsed;
     }
 
     private static Map<String, BiomeGroupSettings> defaultBiomeGroups() {

@@ -52,8 +52,11 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
         this.list.addSmall(
                 bool("enabled", c.enabled, v -> c.enabled = v),
                 slider("density", 0, 100, c.density / 10, v -> ConfigOptions.percent(v * 10), v -> c.density = v * 10));
-        this.list.addBig(Button.builder(Component.translatable(key("biomes")),
-                b -> this.minecraft.gui.setScreen(new BiomeSettingsScreen(this))).build());
+        this.list.addSmall(
+                Button.builder(Component.translatable(key("biomes")),
+                        b -> this.minecraft.gui.setScreen(new BiomeSettingsScreen(this))).build(),
+                Button.builder(Component.translatable(key("dimensions")),
+                        b -> this.minecraft.gui.setScreen(new DimensionSettingsScreen(this))).build());
 
         IlluminationsConfig.Fireflies ff = c.fireflies;
         this.list.addHeader(Component.translatable(key("section.fireflies")));

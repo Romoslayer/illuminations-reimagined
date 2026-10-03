@@ -20,6 +20,7 @@ package io.github.illuminationsreimagined.fabric.gametest;
 
 import io.github.illuminationsreimagined.IlluminationsReimagined;
 import io.github.illuminationsreimagined.client.BiomeSettingsScreen;
+import io.github.illuminationsreimagined.client.DimensionSettingsScreen;
 import io.github.illuminationsreimagined.client.IlluminationsConfigScreen;
 import io.github.illuminationsreimagined.config.IlluminationsConfig;
 import io.github.illuminationsreimagined.config.SeasonalMode;
@@ -38,6 +39,8 @@ import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
@@ -227,6 +230,26 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             int firefliesByDay = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.FIREFLY));
             IlluminationsReimagined.LOGGER.info("[gametest] fireflies 200 ticks after noon: {}", firefliesByDay);
             require(firefliesByDay == 0, "fireflies disappear during the day");
+
+            // Switching the Overworld off stops new effects there (petals, crystals and lantern wisps spawn by day too),
+            // and switching it back on brings them back.
+            Identifier overworld = Level.OVERWORLD.identifier();
+            // The earlier break test removed the chorus flower; put it back as a steady source.
+            world.getServer().runCommand(String.format("setblock %d %d %d chorus_flower", x - 6, y, z + 4));
+            context.runOnClient(c -> {
+                IlluminationsConfig.get().setDimensionEnabled(overworld, false);
+                ParticleTracker.clear();
+            });
+            context.waitTicks(200);
+            int whileOff = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.CHORUS_PETAL)
+                    + ParticleTracker.count(ParticleKind.PRISMARINE_CRYSTAL) + ParticleTracker.count(ParticleKind.WILL_O_WISP));
+            context.runOnClient(c -> IlluminationsConfig.get().setDimensionEnabled(overworld, true));
+            context.waitTicks(200);
+            int whileOn = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.CHORUS_PETAL)
+                    + ParticleTracker.count(ParticleKind.PRISMARINE_CRYSTAL) + ParticleTracker.count(ParticleKind.WILL_O_WISP));
+            IlluminationsReimagined.LOGGER.info("[gametest] block effects with the Overworld off / on: {} / {}", whileOff, whileOn);
+            require(whileOff == 0, "no effects appear in a dimension that is switched off");
+            require(whileOn > 0, "effects return when the dimension is switched back on");
         }
 
         // After leaving the world, the tracker must not keep stale particles.
@@ -245,6 +268,11 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
         context.runOnClient(client -> client.gui.setScreen(new BiomeSettingsScreen(client.gui.screen())));
         context.waitForScreen(BiomeSettingsScreen.class);
         context.takeScreenshot("illuminations_biome_screen");
+        context.clickScreenButton("gui.done");
+        context.waitForScreen(IlluminationsConfigScreen.class);
+        context.runOnClient(client -> client.gui.setScreen(new DimensionSettingsScreen(client.gui.screen())));
+        context.waitForScreen(DimensionSettingsScreen.class);
+        context.takeScreenshot("illuminations_dimension_screen");
         context.clickScreenButton("gui.done");
         context.waitForScreen(IlluminationsConfigScreen.class);
         context.runOnClient(client -> IlluminationsConfig.get().density = 250);

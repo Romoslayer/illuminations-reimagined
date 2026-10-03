@@ -108,7 +108,7 @@ public final class AmbientSpawner {
     /** Called for each of vanilla's random display-tick samples, with the sampled position. */
     public static void onAnimateTick(ClientLevel level, BlockPos sample) {
         IlluminationsConfig config = IlluminationsConfig.get();
-        if (!config.enabled) {
+        if (!config.enabled || !config.isDimensionEnabled(level)) {
             return;
         }
         long start = System.nanoTime();

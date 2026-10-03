@@ -48,7 +48,7 @@ public final class BlockAmbience {
 
     public static void onAnimateTick(ClientLevel level, BlockPos pos, BlockState state, RandomSource random) {
         IlluminationsConfig config = IlluminationsConfig.get();
-        if (!config.enabled) {
+        if (!config.enabled || !config.isDimensionEnabled(level)) {
             return;
         }
         if (state.is(Blocks.CHORUS_FLOWER)) {
@@ -70,7 +70,8 @@ public final class BlockAmbience {
     /** Petal burst when a chorus flower is broken: ten times its usual petals (younger flowers burst more). */
     public static void onBlockDestroyed(ClientLevel level, BlockPos pos, BlockState state) {
         IlluminationsConfig config = IlluminationsConfig.get();
-        if (!config.enabled || !config.chorusPetals.burstOnBreak || !state.is(Blocks.CHORUS_FLOWER)) {
+        if (!config.enabled || !config.isDimensionEnabled(level) || !config.chorusPetals.burstOnBreak
+                || !state.is(Blocks.CHORUS_FLOWER)) {
             return;
         }
         RandomSource random = level.getRandom();

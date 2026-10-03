@@ -42,7 +42,7 @@ public final class HalloweenSpirits {
     }
 
     private static boolean active(ClientLevel level, IlluminationsConfig config) {
-        return config.enabled && WorldConditions.isNight(level) && WorldConditions.isHalloween(config.halloweenSpirits.mode);
+        return config.enabled && config.isDimensionEnabled(level) && WorldConditions.isNight(level) && WorldConditions.isHalloween(config.halloweenSpirits.mode);
     }
 
     static void fromJackOLantern(ClientLevel level, BlockPos pos, RandomSource random, IlluminationsConfig config) {
