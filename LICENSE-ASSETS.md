@@ -1,6 +1,7 @@
 # Asset license
 
-Applies to everything under `common/src/main/resources/assets/illuminations_reimagined/` (textures, icon).
+Applies to everything under `common/src/main/resources/assets/illuminations_reimagined/` (textures, icon) and to the
+promotional artwork under `artwork/` (the project thumbnail).
 
 These assets were created from scratch for Illuminations Reimagined. They are **not** derived from the
 original Illuminations artwork (All Rights Reserved, Ladysnake) or from any other third-party artwork.
