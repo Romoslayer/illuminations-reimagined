@@ -20,6 +20,9 @@
   "entrypoints": {
     "client": [
       "io.github.illuminationsreimagined.fabric.IlluminationsReimaginedFabric"
+    ],
+    "modmenu": [
+      "io.github.illuminationsreimagined.fabric.ModMenuIntegration"
     ]
   },
   "mixins": [

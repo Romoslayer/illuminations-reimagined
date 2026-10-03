@@ -17,6 +17,7 @@ First version of Illuminations Reimagined, an unofficial continuation of Illumin
 - Ported to Minecraft 26.2 and 26.3 (unobfuscated, Mojang names) with a shared codebase for Fabric and NeoForge.
 - New mod ID `illuminations_reimagined`, package `io.github.illuminationsreimagined`, name and icon.
 - Config is now `config/illuminations_reimagined.json`: typed, validated and self-healing.
+- In-game settings screen built from vanilla option widgets, with a per-biome sub-screen and a reset button. Opens from Mod Menu (optional) on Fabric and from the Mods screen on NeoForge.
 - Biome rules use biome tags (vanilla and `c:` conventions) instead of `Biome.Category` and pre-1.18 biome IDs.
 - Particles are created directly instead of being registered as particle types.
 - Will o' wisps are animated billboards with ember trails instead of entity models.

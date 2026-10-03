@@ -19,17 +19,21 @@
 package io.github.illuminationsreimagined.neoforge;
 
 import io.github.illuminationsreimagined.IlluminationsReimagined;
+import io.github.illuminationsreimagined.client.IlluminationsConfigScreen;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(value = IlluminationsReimagined.MOD_ID, dist = Dist.CLIENT)
 public final class IlluminationsReimaginedNeoForge {
-    public IlluminationsReimaginedNeoForge(IEventBus modBus) {
+    public IlluminationsReimaginedNeoForge(IEventBus modBus, ModContainer container) {
         IlluminationsReimagined.init();
+        container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> new IlluminationsConfigScreen(parent));
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> IlluminationsReimagined.onClientTick(Minecraft.getInstance()));
     }
 }

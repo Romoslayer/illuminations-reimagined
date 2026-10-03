@@ -19,6 +19,8 @@
 package io.github.illuminationsreimagined.fabric.gametest;
 
 import io.github.illuminationsreimagined.IlluminationsReimagined;
+import io.github.illuminationsreimagined.client.BiomeSettingsScreen;
+import io.github.illuminationsreimagined.client.IlluminationsConfigScreen;
 import io.github.illuminationsreimagined.config.IlluminationsConfig;
 import io.github.illuminationsreimagined.config.SeasonalMode;
 import io.github.illuminationsreimagined.config.SpawnRate;
@@ -40,6 +42,8 @@ import java.util.Map;
 public class AmbientEffectsClientGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
+        testConfigScreens(context);
+
         // Make every effect frequent so the test is fast and deterministic enough.
         context.runOnClient(client -> {
             IlluminationsConfig config = IlluminationsConfig.get();
@@ -117,6 +121,30 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
         Map<ParticleKind, Integer> after = counts(context);
         IlluminationsReimagined.LOGGER.info("[gametest] counts after leaving world: {}", after);
         require(after.values().stream().allMatch(c -> c == 0), "tracker is empty after leaving the world");
+    }
+
+    /** Opens the settings screens, navigates to the biome screen and back, and checks that closing saves the file. */
+    private static void testConfigScreens(ClientGameTestContext context) {
+        context.setScreen(() -> new IlluminationsConfigScreen(null));
+        context.waitForScreen(IlluminationsConfigScreen.class);
+        context.takeScreenshot("illuminations_config_screen");
+        // The biome button lives inside the scrolling options list, which the test helper cannot click into.
+        context.runOnClient(client -> client.gui.setScreen(new BiomeSettingsScreen(client.gui.screen())));
+        context.waitForScreen(BiomeSettingsScreen.class);
+        context.takeScreenshot("illuminations_biome_screen");
+        context.clickScreenButton("gui.done");
+        context.waitForScreen(IlluminationsConfigScreen.class);
+        context.runOnClient(client -> IlluminationsConfig.get().density = 250);
+        context.clickScreenButton("gui.done");
+        context.waitFor(client -> !(client.gui.screen() instanceof IlluminationsConfigScreen));
+        boolean saved = context.computeOnClient(client -> {
+            try {
+                return java.nio.file.Files.readString(IlluminationsConfig.path()).contains("\"density\": 250");
+            } catch (java.io.IOException e) {
+                return false;
+            }
+        });
+        require(saved, "closing the config screen saves the config file");
     }
 
     private static void fill(TestSingleplayerContext world, int x1, int y1, int z1, int x2, int y2, int z2, String block) {

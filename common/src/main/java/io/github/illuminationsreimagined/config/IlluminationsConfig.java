@@ -176,6 +176,13 @@ public final class IlluminationsConfig {
         return Services.PLATFORM.getConfigDir().resolve(IlluminationsReimagined.MOD_ID + ".json");
     }
 
+    /** Replaces the current settings with defaults (used by the config screen's reset button). */
+    public static void resetToDefaults() {
+        instance = new IlluminationsConfig();
+        instance.sanitize();
+        instance.save();
+    }
+
     public static void load() {
         Path path = path();
         IlluminationsConfig loaded = null;
