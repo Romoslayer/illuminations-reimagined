@@ -18,6 +18,7 @@
  */
 package io.github.illuminationsreimagined.mixin;
 
+import io.github.illuminationsreimagined.spawn.AmbientSpawner;
 import io.github.illuminationsreimagined.spawn.BlockAmbience;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -30,7 +31,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Hooks for block-driven ambient effects. Only two small injections; all logic lives in {@link BlockAmbience}. */
+/**
+ * Hooks for ambient effects: every random display-tick sample feeds {@link BlockAmbience} (block-driven effects) and
+ * {@link AmbientSpawner} (biome-driven effects), and block destruction feeds petal bursts.
+ */
 @Mixin(ClientLevel.class)
 public abstract class ClientLevelMixin {
     @Inject(method = "doAnimateTick", at = @At("TAIL"))
@@ -38,6 +42,7 @@ public abstract class ClientLevelMixin {
                                                       @Nullable Block markerParticleTarget, BlockPos.MutableBlockPos pos, CallbackInfo ci) {
         ClientLevel level = (ClientLevel) (Object) this;
         BlockAmbience.onAnimateTick(level, pos, level.getBlockState(pos), animateRandom);
+        AmbientSpawner.onAnimateTick(level, pos);
     }
 
     @Inject(method = "addDestroyBlockEffect", at = @At("HEAD"))

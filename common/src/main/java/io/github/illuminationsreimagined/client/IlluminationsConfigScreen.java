@@ -51,10 +51,7 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
         this.list.addHeader(Component.translatable(key("section.general")));
         this.list.addSmall(
                 bool("enabled", c.enabled, v -> c.enabled = v),
-                slider("density", 0, 40, c.density / 10, v -> ConfigOptions.percent(v * 10), v -> c.density = v * 10));
-        this.list.addSmall(
-                slider("spawnRadius", 16, 96, c.spawnRadius, ConfigOptions::blocks, v -> c.spawnRadius = v),
-                slider("samplesPerTick", 8, 256, c.samplesPerTick, ConfigOptions::number, v -> c.samplesPerTick = v));
+                slider("density", 0, 100, c.density / 10, v -> ConfigOptions.percent(v * 10), v -> c.density = v * 10));
         this.list.addBig(Button.builder(Component.translatable(key("biomes")),
                 b -> this.minecraft.gui.setScreen(new BiomeSettingsScreen(this))).build());
 
@@ -70,12 +67,12 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
                 cycle("fireflies.autumnColors", SeasonalMode.class, ff.autumnColors, v -> ff.autumnColors = v),
                 slider("fireflies.coreBrightness", 0, 100, ff.coreBrightness, ConfigOptions::percent, v -> ff.coreBrightness = v));
         this.list.addSmall(
-                slider("maxCount", 0, 500, ff.maxCount, ConfigOptions::number, v -> ff.maxCount = v));
+                slider("maxCount", 0, 2000, ff.maxCount, ConfigOptions::number, v -> ff.maxCount = v));
 
         this.list.addHeader(Component.translatable(key("section.glowwormsPlankton")));
         this.list.addSmall(
-                slider("glowworms.maxCount", 0, 500, c.glowworms.maxCount, ConfigOptions::number, v -> c.glowworms.maxCount = v),
-                slider("plankton.maxCount", 0, 500, c.plankton.maxCount, ConfigOptions::number, v -> c.plankton.maxCount = v));
+                slider("glowworms.maxCount", 0, 2000, c.glowworms.maxCount, ConfigOptions::number, v -> c.glowworms.maxCount = v),
+                slider("plankton.maxCount", 0, 2000, c.plankton.maxCount, ConfigOptions::number, v -> c.plankton.maxCount = v));
 
         IlluminationsConfig.Eyes eyes = c.eyesInTheDark;
         this.list.addHeader(Component.translatable(key("section.eyes")));
@@ -111,7 +108,7 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
                 bool("chorus.burstOnBreak", petals.burstOnBreak, v -> petals.burstOnBreak = v));
         this.list.addSmall(
                 bool("prismarine.enabled", c.prismarineCrystals.enabled, v -> c.prismarineCrystals.enabled = v),
-                slider("prismarine.maxCount", 0, 500, c.prismarineCrystals.maxCount, ConfigOptions::number, v -> c.prismarineCrystals.maxCount = v));
+                slider("prismarine.maxCount", 0, 2000, c.prismarineCrystals.maxCount, ConfigOptions::number, v -> c.prismarineCrystals.maxCount = v));
     }
 
     @Override

@@ -19,41 +19,30 @@
 package io.github.illuminationsreimagined.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
-import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * A glowworm hanging from a cave ceiling, pulsing slowly. When its supporting block disappears it drops and fades.
+ * A glowworm hanging from a cave ceiling, blinking slowly. When the block above it disappears it drops and fades.
+ * Ported from the original mod's glowworm.
  *
- * <p>Changes from the original: no per-tick {@code new Random()}, the ceiling search respects the modern build
- * height, support is checked every few ticks instead of every tick, and a falling glowworm stops at the floor
- * rather than sliding through blocks.</p>
+ * <p>Changes from the original: no per-tick {@code new Random()}, and the ceiling search (done by the spawner) respects
+ * the modern build height. The original also steered glowworms along the ceiling, but toward a target height of 0,
+ * which left them all but motionless; they now simply stay put.</p>
  */
 public class GlowwormParticle extends AmbientParticle {
-    private static final float PULSE_STEP = 0.008F;
+    private static final float BLINK_STEP = 0.01F;
 
-    private float brightness;
-    private float targetBrightness;
-    private boolean falling;
-    private boolean fadingOut;
-    private final double anchorX;
-    private final double anchorZ;
-    private final float swayPhase;
+    private float glow;
+    private float nextGlowGoal;
+    private boolean onCeiling = true;
 
-    /**
-     * @param ceilingBottomY the Y coordinate of the underside of the supporting block
-     */
-    public GlowwormParticle(ClientLevel level, double x, double ceilingBottomY, double z) {
-        super(level, x, ceilingBottomY - 0.06, z, Sprites.get(Sprites.GLOWWORM));
-        this.quadSize = 0.06F + this.random.nextFloat() * 0.05F;
+    /** @param y the hanging height, just below the ceiling block */
+    public GlowwormParticle(ClientLevel level, double x, double y, double z) {
+        super(level, x, y, z, Sprites.get(Sprites.GLOWWORM));
+        this.quadSize *= 0.25F + this.random.nextFloat() * 0.5F;
         this.lifetime = 1200 + this.random.nextInt(2401);
-        this.hasPhysics = false;
+        this.hasPhysics = true;
         this.alpha = 0.0F;
-        this.anchorX = x;
-        this.anchorZ = z;
-        this.swayPhase = this.random.nextFloat() * Mth.TWO_PI;
-        this.setColor(0.25F + this.random.nextFloat() * 0.15F, 0.85F + this.random.nextFloat() * 0.15F, 1.0F);
+        this.setColor(0.0F, 0.75F + this.random.nextFloat() * 0.25F, 1.0F);
     }
 
     @Override
@@ -63,45 +52,32 @@ public class GlowwormParticle extends AmbientParticle {
 
     @Override
     protected void tickAmbient() {
-        if (this.age++ >= this.lifetime) {
-            this.fadingOut = true;
+        boolean fadingOut = this.age++ >= this.lifetime;
+        if (fadingOut && this.glow < 0.0F) {
+            this.remove();
+            return;
+        }
+        if (this.onCeiling && this.level.getBlockState(this.at(this.x, this.y + 0.5, this.z)).isAir()) {
+            this.onCeiling = false;
+        }
+        if (!this.onCeiling) {
+            this.yd -= 0.1;
+            this.lifetime = 0;
         }
 
-        if (!this.falling && this.age % 10 == 0 && !this.hasSupport()) {
-            this.falling = true;
-            this.fadingOut = true;
-            this.hasPhysics = true;
-        }
-
-        if (this.fadingOut) {
-            this.brightness -= this.falling ? 0.03F : PULSE_STEP;
-            if (this.brightness <= 0.0F) {
-                this.remove();
-                return;
-            }
+        if (fadingOut) {
+            this.glow -= BLINK_STEP;
+        } else if (this.glow > this.nextGlowGoal - BLINK_STEP && this.glow < this.nextGlowGoal + BLINK_STEP) {
+            this.nextGlowGoal = this.random.nextFloat();
+        } else if (this.nextGlowGoal > this.glow) {
+            this.glow += BLINK_STEP;
         } else {
-            if (Math.abs(this.brightness - this.targetBrightness) < PULSE_STEP) {
-                this.targetBrightness = 0.35F + this.random.nextFloat() * 0.65F;
-            }
-            this.brightness += Mth.clamp(this.targetBrightness - this.brightness, -PULSE_STEP, PULSE_STEP);
+            this.glow -= BLINK_STEP;
         }
-        this.alpha = Mth.clamp(this.brightness, 0.0F, 1.0F);
+        this.alpha = Math.max(0.0F, Math.min(1.0F, this.glow));
 
-        if (this.falling) {
-            this.yd = Math.max(this.yd - 0.04, -0.6);
+        if (this.yd != 0.0) {
             this.move(0.0, this.yd, 0.0);
-            if (this.onGround) {
-                this.yd = 0.0;
-            }
-        } else {
-            // Gentle sway around the anchor point; position is set directly but stays within a few hundredths of a block.
-            float t = (this.age + this.swayPhase * 20.0F) * 0.03F;
-            this.setPos(this.anchorX + Mth.sin(t) * 0.015, this.y, this.anchorZ + Mth.cos(t * 0.7F) * 0.015);
         }
-    }
-
-    private boolean hasSupport() {
-        BlockState above = this.level.getBlockState(this.at(this.x, this.y + 0.2, this.z));
-        return above.isFaceSturdy(this.level, this.scratchPos, Direction.DOWN);
     }
 }

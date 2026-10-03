@@ -4,7 +4,6 @@
 
   "config.illuminations_reimagined.title": "Illuminations Reimagined",
   "config.illuminations_reimagined.reset": "Reset to Defaults",
-  "config.illuminations_reimagined.unit.blocks": "%s blocks",
 
   "config.illuminations_reimagined.section.general": "General",
   "config.illuminations_reimagined.section.fireflies": "Fireflies",
@@ -17,11 +16,7 @@
   "config.illuminations_reimagined.enabled": "Ambient Effects",
   "config.illuminations_reimagined.enabled.tooltip": "Turns every effect from this mod on or off.",
   "config.illuminations_reimagined.density": "Density",
-  "config.illuminations_reimagined.density.tooltip": "Scales how often every effect spawns. 100% is the default; 0% stops new effects from appearing.",
-  "config.illuminations_reimagined.spawnRadius": "Spawn Radius",
-  "config.illuminations_reimagined.spawnRadius.tooltip": "How far from you effects may appear. Larger values spread the same number of effects over a wider area.",
-  "config.illuminations_reimagined.samplesPerTick": "Spawn Checks",
-  "config.illuminations_reimagined.samplesPerTick.tooltip": "Spots checked for possible effects each tick. Higher fills the world faster but costs a little more performance.",
+  "config.illuminations_reimagined.density.tooltip": "Scales how often fireflies, glowworms, plankton and will o' wisps spawn. 100% is the default; 0% stops them appearing.",
   "config.illuminations_reimagined.biomes": "Biome Settings...",
   "config.illuminations_reimagined.maxCount": "Maximum at Once",
   "config.illuminations_reimagined.maxCount.tooltip": "No more than this many of this effect exist at the same time.",

@@ -25,7 +25,6 @@ import net.minecraft.client.renderer.state.level.QuadParticleRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.ARGB;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
@@ -38,77 +37,60 @@ import org.joml.Quaternionf;
 import java.awt.Color;
 
 /**
- * A firefly: a softly blinking light that wanders a few blocks above the ground at night.
+ * A firefly: a blinking light that wanders within four blocks of the ground and is drawn to nearby light. Ported from
+ * the original mod's firefly.
  *
- * <p>Rewritten rather than ported. Bugs in the original implementation that this fixes:</p>
+ * <p>Bugs in the original that this fixes, with the behaviour otherwise kept:</p>
  * <ul>
- *   <li>Light attraction <em>teleported</em> the particle onto the light source on every other retarget, because
- *       the light search never returned "nothing found". Attraction now only steers, and only toward real light
- *       (block light ≥ {@value #MIN_ATTRACTING_LIGHT}) in line of sight.</li>
- *   <li>Movement stopped completely once the particle was inside its target's block, and targets only changed on
- *       world ticks divisible by 20, so fireflies froze in mid-air. Steering is now continuous.</li>
- *   <li>The ground search used {@code 0} as its "not found" value, which is a valid height since 1.18, and
- *       fireflies far above the ground dived toward y = 0..4.</li>
- *   <li>{@code random.nextInt() % 100} produced negative cooldowns, causing retargets every tick.</li>
+ *   <li>Fading out (at daybreak or old age) never finished: on reaching zero the blink picked a new brightness, so
+ *       fireflies lived forever. They now fade out and are removed.</li>
+ *   <li>Light attraction <em>teleported</em> the particle onto the light source on every other retarget, and the
+ *       light search always returned a block, even an unlit one or one behind a wall. Fireflies now fly toward the
+ *       light, and only toward lit blocks they can see.</li>
+ *   <li>The ground search used {@code 0} as its "not found" value, so fireflies more than 20 blocks up dived toward
+ *       y = 0..4, far below the ground since 1.18. They now descend 16 to 20 blocks at a time until they find it.</li>
+ *   <li>Until the first retarget, fireflies flew toward the world origin.</li>
  *   <li>Several allocations per tick and per rendered frame were removed.</li>
  * </ul>
  */
 public class FireflyParticle extends AmbientParticle {
-    private static final int MIN_ATTRACTING_LIGHT = 8;
-    private static final double MAX_SPEED = 0.06;
-    private static final double STEER = 0.006;
-    private static final int GROUND_SEARCH_DEPTH = 12;
-    private static final float FADE_STEP = 0.04F;
+    private static final float BLINK_STEP = 0.05F;
+    private static final int GROUND_SEARCH_DEPTH = 20;
+    private static final int MAX_HEIGHT = 4;
 
     private final TextureAtlasSprite coreSprite;
-    private final float maxHeightAboveGround;
-    private float brightness;
-    private float targetBrightness;
+    private float nextAlphaGoal;
     private float coreAlpha;
     private boolean fadingOut;
 
     private double targetX;
     private double targetY;
     private double targetZ;
+    private boolean hasTarget;
     private int retargetCooldown;
-    private int lightSearchCooldown;
-    private boolean attractedToLight;
-    private double lightX;
-    private double lightY;
-    private double lightZ;
+    private BlockPos lightTarget;
 
     public FireflyParticle(ClientLevel level, double x, double y, double z, int rgb) {
         super(level, x, y, z, Sprites.get(Sprites.FIREFLY_GLOW));
         this.coreSprite = Sprites.get(Sprites.FIREFLY_CORE);
-        this.quadSize = 0.12F + this.random.nextFloat() * 0.1F;
+        this.quadSize *= 0.25F + this.random.nextFloat() * 0.5F;
         this.lifetime = 400 + this.random.nextInt(801);
         this.hasPhysics = true;
-        this.friction = 1.0F;
-        this.gravity = 0.0F;
-        this.maxHeightAboveGround = 2.0F + this.random.nextFloat() * 3.0F;
         this.alpha = 0.0F;
         this.setColor(ARGB.redFloat(rgb), ARGB.greenFloat(rgb), ARGB.blueFloat(rgb));
-        this.targetX = x;
-        this.targetY = y;
-        this.targetZ = z;
-        this.retargetCooldown = 0;
-        this.lightSearchCooldown = 20 + this.random.nextInt(40);
     }
 
     /** Creates a firefly coloured for its surroundings, honouring the rainbow and autumn options. */
     public static FireflyParticle create(ClientLevel level, double x, double y, double z, int biomeColor) {
         IlluminationsConfig.Fireflies cfg = IlluminationsConfig.get().fireflies;
-        int rgb = biomeColor;
-        float hueShift = (level.getRandom().nextFloat() - 0.5F) * (40.0F / 360.0F);
         if (cfg.rainbow) {
-            rgb = Color.HSBtoRGB(level.getRandom().nextFloat(), 0.85F, 1.0F);
-            hueShift = 0.0F;
-        } else if (WorldConditions.isAutumn(cfg.autumnColors)) {
-            rgb = 0xFF9A2E;
+            return new FireflyParticle(level, x, y, z, Color.HSBtoRGB(level.getRandom().nextFloat(), 1.0F, 1.0F));
         }
+        int rgb = WorldConditions.isAutumn(cfg.autumnColors) ? 0xFF9A2E : biomeColor;
+        // Shift the hue by up to 15 degrees either way.
         float[] hsb = Color.RGBtoHSB((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, null);
-        rgb = Color.HSBtoRGB(hsb[0] + hueShift, hsb[1], hsb[2]);
-        return new FireflyParticle(level, x, y, z, rgb);
+        hsb[0] += (level.getRandom().nextFloat() - 0.5F) * 30.0F / 360.0F;
+        return new FireflyParticle(level, x, y, z, Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]));
     }
 
     @Override
@@ -119,164 +101,134 @@ public class FireflyParticle extends AmbientParticle {
     @Override
     protected void tickAmbient() {
         IlluminationsConfig.Fireflies cfg = IlluminationsConfig.get().fireflies;
-
-        if (this.age++ >= this.lifetime
-                || (!cfg.spawnAlways && !WorldConditions.isNight(this.level))
-                || !this.level.isLoaded(this.at(this.x, this.y, this.z))) {
+        boolean daylight = !cfg.spawnAlways && !this.level.dimensionType().hasFixedTime() && !WorldConditions.isNight(this.level);
+        if (daylight || this.age++ >= this.lifetime) {
             this.fadingOut = true;
         }
-
-        this.tickBlink();
-        if (this.fadingOut && this.brightness <= 0.0F) {
+        this.tickBlink(cfg);
+        if (this.fadingOut && this.alpha <= 0.0F) {
             this.remove();
             return;
         }
 
-        if (cfg.lightAttraction && --this.lightSearchCooldown <= 0) {
-            this.lightSearchCooldown = 40 + this.random.nextInt(40);
-            this.attractedToLight = this.findLightTarget();
-        }
-
+        // The original counted this down by 10 whenever the firefly had barely moved, which (as it compared the
+        // position with itself) was every tick.
+        this.retargetCooldown -= 10;
         double dx = this.targetX - this.x;
         double dy = this.targetY - this.y;
         double dz = this.targetZ - this.z;
-        double distSq = dx * dx + dy * dy + dz * dz;
-        double arriveRadius = this.attractedToLight ? 2.25 : 1.0;
-        if (--this.retargetCooldown <= 0 || distSq < arriveRadius) {
-            if (this.attractedToLight) {
-                this.orbitLightTarget();
-            } else {
-                this.pickWanderTarget();
-            }
+        if (!this.hasTarget || (this.level.getGameTime() % 20 == 0 && (dx * dx + dy * dy + dz * dz < 9.0 || this.retargetCooldown <= 0))) {
+            this.selectBlockTarget(cfg);
             dx = this.targetX - this.x;
             dy = this.targetY - this.y;
             dz = this.targetZ - this.z;
-            distSq = dx * dx + dy * dy + dz * dz;
         }
 
-        if (distSq > 1.0E-6) {
-            double inv = 1.0 / Math.sqrt(distSq);
-            this.xd += dx * inv * STEER;
-            this.yd += dy * inv * STEER * 0.6;
-            this.zd += dz * inv * STEER;
-        }
-        // A little drift so motion never looks mechanical.
-        this.xd += (this.random.nextFloat() - 0.5F) * 0.002;
-        this.yd += (this.random.nextFloat() - 0.5F) * 0.002;
-        this.zd += (this.random.nextFloat() - 0.5F) * 0.002;
-
-        double speedSq = this.xd * this.xd + this.yd * this.yd + this.zd * this.zd;
-        if (speedSq > MAX_SPEED * MAX_SPEED) {
-            double scale = MAX_SPEED / Math.sqrt(speedSq);
-            this.xd *= scale;
-            this.yd *= scale;
-            this.zd *= scale;
-        }
-        this.xd *= 0.96;
-        this.yd *= 0.96;
-        this.zd *= 0.96;
-
-        double beforeX = this.x;
-        double beforeZ = this.z;
-        this.move(this.xd, this.yd, this.zd);
-        // Blocked by a wall: choose somewhere else soon instead of pushing against it forever.
-        if (Math.abs(this.x - beforeX) < 1.0E-4 && Math.abs(this.z - beforeZ) < 1.0E-4 && (Math.abs(this.xd) > 0.01 || Math.abs(this.zd) > 0.01)) {
-            this.retargetCooldown = Math.min(this.retargetCooldown, 5);
-            this.attractedToLight = false;
-        }
-    }
-
-    private void tickBlink() {
-        float coreFactor = IlluminationsConfig.get().fireflies.coreBrightness / 100.0F;
-        if (this.fadingOut) {
-            this.brightness = Math.max(0.0F, this.brightness - FADE_STEP);
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        double scale = length > 1.0E-6 ? 0.1 / length : 0.0;
+        this.xd = 0.9 * this.xd + 0.1 * dx * scale;
+        this.zd = 0.9 * this.zd + 0.1 * dz * scale;
+        // Standing on something: hop up off it.
+        BlockState below = this.level.getBlockState(this.at(this.x, this.y - 0.1, this.z));
+        if (!below.getBlock().isPossibleToRespawnInThis(below)) {
+            this.yd = 0.05;
         } else {
-            if (Math.abs(this.brightness - this.targetBrightness) < FADE_STEP) {
-                // Mostly-lit with occasional dim phases reads as "blinking" without strobing.
-                this.targetBrightness = this.random.nextFloat() < 0.25F ? this.random.nextFloat() * 0.2F : 0.5F + this.random.nextFloat() * 0.5F;
-            }
-            this.brightness += Mth.clamp(this.targetBrightness - this.brightness, -FADE_STEP, FADE_STEP);
+            this.yd = 0.9 * this.yd + 0.1 * dy * scale;
         }
-        this.alpha = this.brightness;
-        this.coreAlpha = this.brightness * coreFactor;
+
+        // Hover once inside the target's block, until the next retarget.
+        BlockPos.MutableBlockPos targetBlock = this.at(this.targetX, this.targetY + 0.5, this.targetZ);
+        if (!targetBlock.equals(BlockPos.containing(this.x, this.y, this.z))) {
+            this.moveSteered(this.xd, this.yd, this.zd);
+        }
     }
 
-    private void pickWanderTarget() {
-        double ground = this.findGroundBelow();
-        this.targetX = this.x + (this.random.nextDouble() - 0.5) * 12.0;
-        this.targetZ = this.z + (this.random.nextDouble() - 0.5) * 12.0;
-        double desired = this.y + (this.random.nextDouble() - 0.5) * 3.0;
-        this.targetY = Mth.clamp(desired, ground + 0.5, ground + this.maxHeightAboveGround);
-        BlockState state = this.level.getBlockState(this.at(this.targetX, this.targetY, this.targetZ));
-        if (state.isCollisionShapeFullBlock(this.level, this.scratchPos)) {
-            this.targetY += 1.0;
+    private void tickBlink(IlluminationsConfig.Fireflies cfg) {
+        if (this.fadingOut) {
+            this.alpha = Math.max(0.0F, this.alpha - BLINK_STEP);
+        } else if (this.alpha > this.nextAlphaGoal - BLINK_STEP && this.alpha < this.nextAlphaGoal + BLINK_STEP) {
+            this.nextAlphaGoal = this.random.nextFloat();
+        } else if (this.nextAlphaGoal > this.alpha) {
+            this.alpha = Math.min(this.alpha + BLINK_STEP, 1.0F);
+        } else {
+            this.alpha = Math.max(this.alpha - BLINK_STEP, 0.0F);
         }
-        this.retargetCooldown = 40 + this.random.nextInt(80);
+        this.coreAlpha = this.alpha * cfg.coreBrightness / 100.0F;
     }
 
-    /** Height of the first collidable surface below the particle, or the particle's own height if none is close. */
-    private double findGroundBelow() {
-        BlockPos.MutableBlockPos pos = this.at(this.x, this.y, this.z);
-        int minY = this.level.getMinY();
-        for (int i = 0; i < GROUND_SEARCH_DEPTH && pos.getY() > minY; i++) {
-            pos.move(0, -1, 0);
-            BlockState state = this.level.getBlockState(pos);
-            if (!state.getCollisionShape(this.level, pos).isEmpty() || !state.getFluidState().isEmpty()) {
-                return pos.getY() + 1.0;
+    private void selectBlockTarget(IlluminationsConfig.Fireflies cfg) {
+        if (this.lightTarget == null) {
+            double ground = this.findGround();
+            this.targetX = this.x + this.random.nextGaussian() * 10.0;
+            this.targetY = Math.min(Math.max(this.y + this.random.nextGaussian() * 2.0, ground), ground + MAX_HEIGHT);
+            this.targetZ = this.z + this.random.nextGaussian() * 10.0;
+            BlockPos.MutableBlockPos target = this.at(this.targetX, this.targetY, this.targetZ);
+            BlockState state = this.level.getBlockState(target);
+            if (state.isCollisionShapeFullBlock(this.level, target) && state.isRedstoneConductor(this.level, target)) {
+                this.targetY += 1.0;
+            }
+            if (cfg.lightAttraction) {
+                this.lightTarget = this.findMostLitBlockAround();
+            }
+        } else {
+            this.targetX = this.lightTarget.getX() + this.random.nextGaussian();
+            this.targetY = this.lightTarget.getY() + this.random.nextGaussian();
+            this.targetZ = this.lightTarget.getZ() + this.random.nextGaussian();
+            if (this.level.getBrightness(LightLayer.BLOCK, this.lightTarget.above()) > 0 && !this.level.isBrightOutside()) {
+                this.lightTarget = this.findMostLitBlockAround();
+            } else {
+                this.lightTarget = null;
             }
         }
-        // Nothing nearby (high over a ravine or the void): stay at the current height instead of diving.
-        return this.y - 1.0;
+        this.hasTarget = true;
+        this.retargetCooldown = this.random.nextInt(100);
+    }
+
+    /** Height of the first solid block (or liquid) within 20 blocks below; without one, 20 blocks down. */
+    private double findGround() {
+        for (int i = 0; i < GROUND_SEARCH_DEPTH; i++) {
+            BlockState state = this.level.getBlockState(this.at(this.x, this.y - i, this.z));
+            if (!state.getBlock().isPossibleToRespawnInThis(state)) {
+                return this.y - i;
+            }
+        }
+        return this.y - GROUND_SEARCH_DEPTH;
     }
 
     /**
-     * Samples a handful of nearby positions for block light and keeps the brightest one that the firefly can see.
-     * Returns false when there is no worthwhile light, which ends any previous attraction.
+     * The block with the most block light among the 27 around the firefly and 15 random ones nearby, or null when none
+     * of them is lit or the firefly cannot see it.
      */
-    private boolean findLightTarget() {
-        int best = MIN_ATTRACTING_LIGHT - 1;
-        double bestX = 0;
-        double bestY = 0;
-        double bestZ = 0;
-        for (int i = 0; i < 8; i++) {
-            double sx = this.x + (this.random.nextDouble() - 0.5) * 16.0;
-            double sy = this.y + (this.random.nextDouble() - 0.5) * 6.0;
-            double sz = this.z + (this.random.nextDouble() - 0.5) * 16.0;
-            BlockPos.MutableBlockPos pos = this.at(sx, sy, sz);
-            if (!this.level.isLoaded(pos)) {
-                continue;
+    private BlockPos findMostLitBlockAround() {
+        BlockPos.MutableBlockPos pos = this.scratchPos;
+        int bestLight = 0;
+        int bestX = 0;
+        int bestY = 0;
+        int bestZ = 0;
+        for (int i = 0; i < 27 + 15; i++) {
+            if (i < 27) {
+                pos.set(this.x + i % 3 - 1, this.y + i / 3 % 3 - 1, this.z + i / 9 - 1);
+            } else {
+                pos.set(this.x + this.random.nextGaussian() * 10.0, this.y + this.random.nextGaussian() * 10.0, this.z + this.random.nextGaussian() * 10.0);
             }
             int light = this.level.getBrightness(LightLayer.BLOCK, pos);
-            if (light > best) {
-                best = light;
-                bestX = pos.getX() + 0.5;
-                bestY = pos.getY() + 0.5;
-                bestZ = pos.getZ() + 0.5;
+            if (light > bestLight) {
+                bestLight = light;
+                bestX = pos.getX();
+                bestY = pos.getY();
+                bestZ = pos.getZ();
             }
         }
-        if (best < MIN_ATTRACTING_LIGHT) {
-            return false;
+        if (bestLight == 0) {
+            return null;
         }
-        Vec3 from = new Vec3(this.x, this.y, this.z);
-        Vec3 to = new Vec3(bestX, bestY, bestZ);
-        BlockHitResult hit = this.level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty()));
-        if (hit.getType() != HitResult.Type.MISS && hit.getLocation().distanceToSqr(to) > 2.25) {
-            return false;
+        Vec3 to = new Vec3(bestX + 0.5, bestY + 0.5, bestZ + 0.5);
+        BlockHitResult hit = this.level.clip(new ClipContext(new Vec3(this.x, this.y, this.z), to, ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, CollisionContext.empty()));
+        if (hit.getType() != HitResult.Type.MISS && !hit.getBlockPos().equals(new BlockPos(bestX, bestY, bestZ))) {
+            return null;
         }
-        this.lightX = bestX;
-        this.lightY = bestY;
-        this.lightZ = bestZ;
-        this.orbitLightTarget();
-        return true;
-    }
-
-    private void orbitLightTarget() {
-        double angle = this.random.nextDouble() * Math.PI * 2.0;
-        double radius = 0.8 + this.random.nextDouble() * 1.2;
-        this.targetX = this.lightX + Math.cos(angle) * radius;
-        this.targetY = this.lightY + (this.random.nextDouble() - 0.3) * 1.5;
-        this.targetZ = this.lightZ + Math.sin(angle) * radius;
-        this.retargetCooldown = 20 + this.random.nextInt(30);
+        return new BlockPos(bestX, bestY, bestZ);
     }
 
     @Override
@@ -290,7 +242,7 @@ public class FireflyParticle extends AmbientParticle {
         state.add(this.getLayer(), x, y, z, rotation.x, rotation.y, rotation.z, rotation.w, size,
                 this.sprite.getU0(), this.sprite.getU1(), this.sprite.getV0(), this.sprite.getV1(),
                 ARGB.colorFromFloat(this.alpha, this.rCol, this.gCol, this.bCol), light);
-        // Bright core.
+        // White centre.
         if (this.coreAlpha > 0.0F) {
             state.add(this.getLayer(), x, y, z, rotation.x, rotation.y, rotation.z, rotation.w, size,
                     this.coreSprite.getU0(), this.coreSprite.getU1(), this.coreSprite.getV0(), this.coreSprite.getV1(),

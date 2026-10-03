@@ -18,10 +18,13 @@
  */
 package io.github.illuminationsreimagined.config;
 
-/** User-facing spawn frequency. The multiplier scales a per-effect base chance. */
+/**
+ * User-facing spawn frequency. The multiplier scales a per-effect base chance; the ratios (0.2 / 1 / 2.5) match the
+ * original mod's per-effect spawn-rate tables.
+ */
 public enum SpawnRate {
     DISABLED(0.0F),
-    LOW(0.3F),
+    LOW(0.2F),
     MEDIUM(1.0F),
     HIGH(2.5F);
 

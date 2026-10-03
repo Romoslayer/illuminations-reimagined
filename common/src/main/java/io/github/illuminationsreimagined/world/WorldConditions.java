@@ -21,6 +21,7 @@ package io.github.illuminationsreimagined.world;
 import io.github.illuminationsreimagined.config.SeasonalMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 
@@ -30,6 +31,9 @@ import java.util.Map;
 
 /** Shared environmental checks used by spawn rules and particle behaviour. */
 public final class WorldConditions {
+    private static Level nightLevel;
+    private static long nightGameTime;
+    private static boolean night;
     /** Biome → group cache. Biome instances are per-registry, so this is cleared whenever the level changes. */
     private static final Map<Biome, BiomeGroup> GROUP_CACHE = new IdentityHashMap<>();
 
@@ -41,8 +45,31 @@ public final class WorldConditions {
      * environment attributes, instead of the original hard-coded sun-angle range. Fixed-time dimensions such as the
      * Nether and End are never "night".
      */
+    /**
+     * Night as the original mod defined it: the sun between 0.2597 and 0.7403 of its daily arc (roughly ticks 13008 to
+     * 22992). In fixed-time dimensions the original read the fixed sky angle, which made the Nether always night and the
+     * End always day. Cached per game tick, as reading the clock is a registry lookup.
+     */
     public static boolean isNight(Level level) {
-        return level.isDarkOutside();
+        long gameTime = level.getGameTime();
+        if (level != nightLevel || gameTime != nightGameTime) {
+            nightLevel = level;
+            nightGameTime = gameTime;
+            if (level.dimensionType().hasFixedTime()) {
+                night = level.dimension() == Level.NETHER;
+            } else {
+                float angle = skyAngle(level.getOverworldClockTime());
+                night = angle >= 0.25965086F && angle <= 0.7403491F;
+            }
+        }
+        return night;
+    }
+
+    /** Vanilla's pre-1.21 sun angle for a time of day: 0 at noon, 0.25 at sunset, 0.5 at midnight. */
+    private static float skyAngle(long timeOfDay) {
+        double day = Mth.frac(timeOfDay / 24000.0 - 0.25);
+        double eased = 0.5 - Math.cos(day * Math.PI) / 2.0;
+        return (float) (day * 2.0 + eased) / 3.0F;
     }
 
     public static boolean isAutumn(SeasonalMode mode) {
@@ -60,5 +87,6 @@ public final class WorldConditions {
 
     public static void clearCaches() {
         GROUP_CACHE.clear();
+        nightLevel = null;
     }
 }

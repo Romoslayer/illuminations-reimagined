@@ -18,13 +18,12 @@
  */
 package io.github.illuminationsreimagined.particle;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
@@ -40,17 +39,20 @@ import net.minecraft.world.phys.Vec3;
  *   <li>each spirit picks a cruising speed between 0.1 and 1.0 blocks per tick and steers toward random targets about
  *       ten blocks away in any direction, re-rolling speed with every new target;</li>
  *   <li>while moving it sheds a trail of sparks, more the faster it flies, whose colour drifts over their short life;</li>
- *   <li>it dies after 30-60 seconds, or after being stuck inside a solid block, bursting into sparks and block
- *       fragments with a sound.</li>
+ *   <li>after 30-60 seconds it bursts into sparks and block fragments with a sound; one that spends over a second
+ *       inside a block after reaching open air simply vanishes.</li>
  * </ul>
  *
- * <p>Differences from the original: the head is an animated billboard instead of a textured 3D model rendered through a
- * private buffer; a spirit no longer stops dead when it reaches its target's block (it picks a new target instead); and
- * retarget cooldowns can no longer go negative.</p>
+ * <p>Fixes over the original: movement no longer latches to a stop after a blocked vertical move (it froze spirits that
+ * touched the ground), the model is centred in the hitbox instead of on its bottom edge (resting spirits sank halfway
+ * into the block), the first target is chosen at once instead of the world origin, a blocked axis loses its speed on
+ * Z as well as X, retarget cooldowns are never negative, and the head turns smoothly (the original interpolated it by
+ * the vertical offset instead of the frame time).</p>
  */
 public abstract class WanderingSpiritParticle extends AmbientParticle {
-    /** Trail sparks only spawn within this distance of the camera, like vanilla's own particle culling. */
-    private static final double TRAIL_RANGE_SQ = 32.0 * 32.0;
+    /** Hitbox edge. The model is drawn centred in the hitbox, so it never sinks into the floor it rests on. */
+    private static final float SIZE = 0.25F;
+    private static final float HALF_SIZE = SIZE / 2.0F;
 
     private final Identifier skin;
     private float yaw;
@@ -70,8 +72,7 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
     private double targetZ;
     private boolean hasTarget;
     private int retargetCooldown;
-    private int ticksInSolid;
-    private int ticksBlocked;
+    private int ticksInBlock = -1;
     private double lastStartX = Double.NaN;
     private double lastStartY;
     private double lastStartZ;
@@ -96,9 +97,9 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
         this.gravity = 0.0F;
         this.lifetime = 600 + this.random.nextInt(600);
         this.speed = rollSpeed();
-        this.alpha = 0.0F;
+        this.alpha = 1.0F;
         this.quadSize = 0.25F;
-        this.setSize(0.2F, 0.2F);
+        this.setSize(SIZE, SIZE);
     }
 
     @Override
@@ -111,7 +112,7 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
     }
 
     Vec3 renderPosition(float partialTick) {
-        return new Vec3(Mth.lerp(partialTick, this.xo, this.x), Mth.lerp(partialTick, this.yo, this.y), Mth.lerp(partialTick, this.zo, this.z));
+        return new Vec3(Mth.lerp(partialTick, this.xo, this.x), Mth.lerp(partialTick, this.yo, this.y) + HALF_SIZE, Mth.lerp(partialTick, this.zo, this.z));
     }
 
     float renderYaw(float partialTick) {
@@ -123,7 +124,17 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
     }
 
     float renderAlpha() {
-        return this.alpha;
+        return this.alpha * this.modelOpacity();
+    }
+
+    /** Drawn with the glowing (emissive) render type; the original drew poltergeists plain. */
+    boolean glows() {
+        return true;
+    }
+
+    /** Opacity of the model; the original drew poltergeists at half opacity. */
+    protected float modelOpacity() {
+        return 1.0F;
     }
 
     private float rollSpeed() {
@@ -133,7 +144,7 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
     /** Ticks between checks for a new target (the original used 20 for wisps and 100 for Halloween spirits). */
     protected abstract int retargetInterval();
 
-    /** Continuous trail while flying (wisps, pumpkin spirits) or only bursts (poltergeists). */
+    /** A trail of 10 × speed sparks per tick (wisps, pumpkin spirits), or a single spark per tick (poltergeists). */
     protected boolean continuousTrail() {
         return true;
     }
@@ -163,7 +174,7 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
 
     @Override
     protected void tickAmbient() {
-        // Did not move at all last tick (stuck): choose somewhere else.
+        // Did not move at all last tick (reached its target's block, or stuck): choose somewhere else.
         if (this.x == this.lastStartX && this.y == this.lastStartY && this.z == this.lastStartZ) {
             this.pickTarget();
         }
@@ -179,15 +190,15 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
             this.die();
             return;
         }
-        this.alpha = Math.min(1.0F, this.alpha + 0.1F);
 
         double dx = this.targetX - this.x;
         double dy = this.targetY - this.y;
         double dz = this.targetZ - this.z;
         double distSq = dx * dx + dy * dy + dz * dz;
-        // The original effectively counted this down by 10 per tick, so retargets come every 0.5-5 seconds.
+        // The original counted this down by 10 whenever the spirit had barely moved, which (as it compared the position
+        // with itself) was every tick.
         this.retargetCooldown -= 10;
-        if (!this.hasTarget || distSq < 9.0 || (this.age % this.retargetInterval() == 0 && this.retargetCooldown <= 0)) {
+        if (!this.hasTarget || (this.level.getGameTime() % this.retargetInterval() == 0 && (distSq < 9.0 || this.retargetCooldown <= 0))) {
             this.pickTarget();
             dx = this.targetX - this.x;
             dy = this.targetY - this.y;
@@ -212,98 +223,76 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
         }
 
         if (this.continuousTrail()) {
-            boolean inSoulBlock = this.passesThroughSoulBlocks() && this.level.getBlockState(this.at(this.x, this.y, this.z)).is(BlockTags.SOUL_FIRE_BASE_BLOCKS);
+            boolean inSoulBlock = this.passesThroughSoulBlocks() && this.level.getBlockState(this.at(this.x, this.y + HALF_SIZE, this.z)).is(BlockTags.SOUL_FIRE_BASE_BLOCKS);
             for (int i = 0; i < 10 * this.speed; i++) {
                 if (inSoulBlock) {
-                    this.level.addParticle(ParticleTypes.SOUL, this.x + this.random.nextGaussian() / 10, this.y + this.random.nextGaussian() / 10,
+                    this.level.addParticle(ParticleTypes.SOUL, this.x + this.random.nextGaussian() / 10, this.y + HALF_SIZE + this.random.nextGaussian() / 10,
                             this.z + this.random.nextGaussian() / 10, this.random.nextGaussian() / 20, this.random.nextGaussian() / 20, this.random.nextGaussian() / 20);
                 } else {
                     this.spawnSpark();
                 }
             }
+        } else {
+            this.spawnSpark();
         }
 
-        this.moveSpirit(this.xd, this.yd, this.zd);
+        // Pause once inside the target's block; the next tick picks a new target.
+        if (!this.at(this.targetX, this.targetY + 0.5, this.targetZ).equals(BlockPos.containing(this.x, this.y, this.z))) {
+            this.moveSpirit(this.xd, this.yd, this.zd);
+        }
 
         if (this.random.nextInt(this.ambientSoundChance()) == 0) {
             this.level.playLocalSound(this.x, this.y, this.z, this.ambientSound(), SoundSource.AMBIENT, 1.0F, this.ambientPitch(), true);
         }
 
-        // Trapped inside a block for over a second (despite drifting out freely): vanish in a burst.
-        this.ticksInSolid = this.isInsideSolid() ? this.ticksInSolid + 1 : 0;
-        if (this.ticksInSolid > 25) {
-            this.die();
+        // Inside a block for over a second after having been out in the air: vanish (the count only starts once the
+        // spirit has left the block it spawned in).
+        if (!this.level.getBlockState(this.at(this.x, this.y + HALF_SIZE, this.z)).isAir()) {
+            if (this.ticksInBlock > -1) {
+                this.ticksInBlock++;
+            }
+        } else {
+            this.ticksInBlock = 0;
+        }
+        if (this.ticksInBlock > 25) {
+            this.remove();
         }
     }
 
+    /**
+     * Aims about ten blocks away in any direction. A target inside a full block is kept but retried at the next
+     * check, without re-rolling the speed, as in the original.
+     */
     private void pickTarget() {
-        // Like the original, aim about ten blocks away in any direction; unlike it, keep trying until the target is not
-        // inside a solid block, instead of flying on toward the old target for up to five seconds.
-        for (int attempt = 0; attempt < 8; attempt++) {
-            this.targetX = this.x + this.random.nextGaussian() * 10;
-            this.targetY = this.y + this.random.nextGaussian() * 10;
-            this.targetZ = this.z + this.random.nextGaussian() * 10;
-            BlockState state = this.level.getBlockState(this.at(this.targetX, this.targetY, this.targetZ));
-            boolean blocked = !state.getCollisionShape(this.level, this.scratchPos).isEmpty()
-                    && !(this.passesThroughSoulBlocks() && state.is(BlockTags.SOUL_FIRE_BASE_BLOCKS));
-            if (!blocked) {
-                break;
-            }
-            if (attempt == 7) {
-                // Hemmed in: rise.
-                this.targetX = this.x;
-                this.targetY = this.y + 4.0;
-                this.targetZ = this.z;
-            }
-        }
+        this.targetX = this.x + this.random.nextGaussian() * 10;
+        this.targetY = this.y + this.random.nextGaussian() * 10;
+        this.targetZ = this.z + this.random.nextGaussian() * 10;
         this.hasTarget = true;
-        this.ticksBlocked = 0;
+        BlockPos.MutableBlockPos target = this.at(this.targetX, this.targetY, this.targetZ);
+        BlockState state = this.level.getBlockState(target);
+        if (state.isCollisionShapeFullBlock(this.level, target) && !(this.passesThroughSoulBlocks() && state.is(BlockTags.SOUL_FIRE_BASE_BLOCKS))) {
+            this.retargetCooldown = 0;
+            return;
+        }
         this.speed = rollSpeed();
         this.retargetCooldown = this.random.nextInt((int) (100 / this.speed));
     }
 
-    /** Inside a block with collision (soul sand and soul soil do not count for spirits that glide through them). */
-    private boolean isInsideSolid() {
-        BlockState state = this.level.getBlockState(this.at(this.x, this.y, this.z));
-        if (this.passesThroughSoulBlocks() && state.is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
-            return false;
-        }
-        return !state.getCollisionShape(this.level, this.scratchPos).isEmpty();
-    }
-
+    /** Collides with blocks, except that wisps glide straight into soul sand and soul soil. */
     private void moveSpirit(double dx, double dy, double dz) {
-        boolean intoSoul = this.passesThroughSoulBlocks()
-                && this.level.getBlockState(this.at(this.x + dx, this.y + dy, this.z + dz)).is(BlockTags.SOUL_FIRE_BASE_BLOCKS);
-        if (intoSoul || this.isInsideSolid()) {
-            // Collision cannot push a particle out of a block it is already inside, so drift freely (and upward) until
-            // clear. This is what kept spirits stuck in jack o'lanterns, skulls and walls.
-            this.setPos(this.x + dx, this.y + dy + (intoSoul ? 0.0 : 0.05), this.z + dz);
+        if (this.passesThroughSoulBlocks()
+                && this.level.getBlockState(this.at(this.x + dx, this.y + dy, this.z + dz)).is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
+            this.setPos(this.x + dx, this.y + dy, this.z + dz);
             return;
         }
-        double beforeX = dx;
-        double beforeZ = dz;
-        this.move(dx, dy, dz);
-        // Mostly blocked for half a second (pressed against a wall or ceiling): choose somewhere else.
-        double wanted = dx * dx + dy * dy + dz * dz;
-        double moved = (this.x - this.xo) * (this.x - this.xo) + (this.y - this.yo) * (this.y - this.yo) + (this.z - this.zo) * (this.z - this.zo);
-        this.ticksBlocked = wanted > 1.0E-4 && moved < wanted * 0.1 ? this.ticksBlocked + 1 : 0;
-        if (this.ticksBlocked > 10) {
-            this.pickTarget();
-        }
-        // Like the original, a blocked horizontal axis loses its speed.
-        if (Math.abs(this.x - this.xo - beforeX) > 1.0E-7) {
-            this.xd = 0.0;
-        }
-        if (Math.abs(this.z - this.zo - beforeZ) > 1.0E-7) {
-            this.zd = 0.0;
-        }
+        this.moveSteered(dx, dy, dz);
     }
 
     private void die() {
         for (int i = 0; i < 25; i++) {
             this.spawnSpark();
             this.level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, this.deathBlock()),
-                    this.x + this.random.nextGaussian() / 10, this.y + this.random.nextGaussian() / 10, this.z + this.random.nextGaussian() / 10,
+                    this.x + this.random.nextGaussian() / 10, this.y + HALF_SIZE + this.random.nextGaussian() / 10, this.z + this.random.nextGaussian() / 10,
                     this.random.nextGaussian() / 20, this.random.nextGaussian() / 20, this.random.nextGaussian() / 20);
         }
         SoundEvent[] sounds = this.deathSounds();
@@ -314,20 +303,10 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
         this.remove();
     }
 
-    /** One trail spark, honouring the particle setting and vanilla's 32-block particle range. */
+    /** One trail spark. Like the original's, sparks ignore distance and the particles setting. */
     private void spawnSpark() {
-        Minecraft minecraft = Minecraft.getInstance();
-        ParticleStatus status = minecraft.options.particles().get();
-        if (status == ParticleStatus.MINIMAL && this.random.nextInt(10) != 0
-                || status == ParticleStatus.DECREASED && this.random.nextInt(3) == 0) {
-            return;
-        }
-        Vec3 camera = minecraft.gameRenderer.mainCamera().position();
-        if (camera.distanceToSqr(this.x, this.y, this.z) > TRAIL_RANGE_SQ) {
-            return;
-        }
         ParticleTracker.spawn(new WispEmberParticle(this.level,
-                this.x + this.random.nextGaussian() / 15, this.y + this.random.nextGaussian() / 15, this.z + this.random.nextGaussian() / 15,
+                this.x + this.random.nextGaussian() / 15, this.y + HALF_SIZE + this.random.nextGaussian() / 15, this.z + this.random.nextGaussian() / 15,
                 this.trailRed, this.trailGreen, this.trailBlue, this.trailRedStep, this.trailGreenStep, this.trailBlueStep));
     }
 }

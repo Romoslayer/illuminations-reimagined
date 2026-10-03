@@ -40,29 +40,30 @@ import java.util.Set;
  * biomes that tag themselves correctly get sensible behaviour automatically.</p>
  */
 public enum BiomeGroup {
+    // Defaults are the original mod's (DefaultConfig.BIOME_SETTINGS), mapped from its biome categories.
     // name               firefly            glowworm           plankton           firefly colour
-    SWAMP(SpawnRate.HIGH, SpawnRate.HIGH, SpawnRate.DISABLED, 0x9BE04A),
-    FOREST(SpawnRate.MEDIUM, SpawnRate.MEDIUM, SpawnRate.DISABLED, 0xC8F25C),
-    JUNGLE(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0x5EE88A),
-    TAIGA(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0xD8EE6A),
-    PLAINS(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0xE4F270),
-    SAVANNA(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0xF2D66A),
-    RIVER(SpawnRate.MEDIUM, SpawnRate.MEDIUM, SpawnRate.DISABLED, 0xB6F06E),
-    LUSH_CAVES(SpawnRate.DISABLED, SpawnRate.HIGH, SpawnRate.DISABLED, 0xF2A65A),
-    CAVES(SpawnRate.DISABLED, SpawnRate.LOW, SpawnRate.DISABLED, 0xC8F25C),
-    OCEAN(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.HIGH, 0xC8F25C),
-    WARM_OCEAN(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.HIGH, 0xC8F25C),
-    BEACH(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xC8F25C),
-    SNOWY(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0x7FD8FF),
-    DESERT(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xFFB45E),
-    BADLANDS(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xFFB45E),
-    MOUNTAINS(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xC8F25C),
-    MUSHROOM(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xFF8FB0),
-    OTHER_OVERWORLD(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xC8F25C),
-    SOUL_SAND_VALLEY(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0x6FE8F2),
-    NETHER(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xFF9A3C),
-    END(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xB07CFF),
-    OTHER(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xC8F25C);
+    SWAMP(SpawnRate.HIGH, SpawnRate.HIGH, SpawnRate.DISABLED, 0x009F00),
+    FOREST(SpawnRate.MEDIUM, SpawnRate.MEDIUM, SpawnRate.DISABLED, 0xBFFF00),
+    JUNGLE(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0x00FF21),
+    TAIGA(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0xBFFF00),
+    PLAINS(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0xBFFF00),
+    SAVANNA(SpawnRate.LOW, SpawnRate.LOW, SpawnRate.DISABLED, 0xBFFF00),
+    RIVER(SpawnRate.MEDIUM, SpawnRate.MEDIUM, SpawnRate.DISABLED, 0xBFFF00),
+    LUSH_CAVES(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xEB8931),
+    CAVES(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xBFFF00),
+    OCEAN(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.HIGH, 0xBFFF00),
+    WARM_OCEAN(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.HIGH, 0xBFFF00),
+    BEACH(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xBFFF00),
+    SNOWY(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0x00BFFF),
+    DESERT(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xFFA755),
+    BADLANDS(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xBFFF00),
+    MOUNTAINS(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xBFFF00),
+    MUSHROOM(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xFF7F8F),
+    OTHER_OVERWORLD(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xBFFF00),
+    SOUL_SAND_VALLEY(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0x00FFFF),
+    NETHER(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xFF8000),
+    END(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0x8000FF),
+    OTHER(SpawnRate.DISABLED, SpawnRate.DISABLED, SpawnRate.DISABLED, 0xBFFF00);
 
     public final SpawnRate defaultFireflies;
     public final SpawnRate defaultGlowworms;

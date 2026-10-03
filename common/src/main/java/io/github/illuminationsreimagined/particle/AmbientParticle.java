@@ -18,14 +18,16 @@
  */
 package io.github.illuminationsreimagined.particle;
 
-import io.github.illuminationsreimagined.config.IlluminationsConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
 
 /**
  * Base class for every particle spawned by the mod.
@@ -37,6 +39,13 @@ import net.minecraft.world.phys.Vec3;
 public abstract class AmbientParticle extends SingleQuadParticle {
     /** Reused scratch position for block queries during ticking; never handed out. */
     protected final BlockPos.MutableBlockPos scratchPos = new BlockPos.MutableBlockPos();
+    /** Vanilla skips collision for moves this long or longer (squared), and so do we. */
+    private static final double MAX_COLLISION_DISTANCE_SQ = 100.0 * 100.0;
+    /**
+     * Horizontal distance beyond which a particle is dropped (the player teleported or travelled away). Spawns reach about
+     * 180 blocks out (a 50-block Gaussian around vanilla's 32-block display-tick area), so this sits just beyond that.
+     */
+    private static final double FAR_FROM_CAMERA = 192.0;
     private long lastTrackedTick;
 
     protected AmbientParticle(ClientLevel level, double x, double y, double z, TextureAtlasSprite sprite) {
@@ -72,15 +81,42 @@ public abstract class AmbientParticle extends SingleQuadParticle {
     }
 
     private boolean isFarFromCamera() {
-        double limit = IlluminationsConfig.get().spawnRadius * 1.5 + 16.0;
         Vec3 camera = Minecraft.getInstance().gameRenderer.mainCamera().position();
         double dx = this.x - camera.x;
         double dz = this.z - camera.z;
-        return dx * dx + dz * dz > limit * limit;
+        return dx * dx + dz * dz > FAR_FROM_CAMERA * FAR_FROM_CAMERA;
     }
 
     /** Per-tick behaviour. Previous-position bookkeeping has already been done. */
     protected abstract void tickAmbient();
+
+    /**
+     * {@link #move} without vanilla's collision latch. Vanilla stops a particle for good the first time a vertical
+     * move is fully blocked, so anything that flies under its own power froze (and spirits spun on the spot) as soon as
+     * it brushed a floor or ceiling. Particles that steer themselves use this instead.
+     */
+    protected void moveSteered(double dx, double dy, double dz) {
+        double wantedX = dx;
+        double wantedY = dy;
+        double wantedZ = dz;
+        if (this.hasPhysics && (dx != 0.0 || dy != 0.0 || dz != 0.0) && dx * dx + dy * dy + dz * dz < MAX_COLLISION_DISTANCE_SQ) {
+            Vec3 allowed = Entity.collideBoundingBox((Entity) null, new Vec3(dx, dy, dz), this.getBoundingBox(), this.level, List.of());
+            dx = allowed.x;
+            dy = allowed.y;
+            dz = allowed.z;
+        }
+        if (dx != 0.0 || dy != 0.0 || dz != 0.0) {
+            this.setBoundingBox(this.getBoundingBox().move(dx, dy, dz));
+            this.setLocationFromBoundingbox();
+        }
+        this.onGround = wantedY != dy && wantedY < 0.0;
+        if (wantedX != dx) {
+            this.xd = 0.0;
+        }
+        if (wantedZ != dz) {
+            this.zd = 0.0;
+        }
+    }
 
     @Override
     protected Layer getLayer() {

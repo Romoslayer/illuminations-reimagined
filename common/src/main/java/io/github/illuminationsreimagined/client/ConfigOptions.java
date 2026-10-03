@@ -69,8 +69,5 @@ final class ConfigOptions {
     static Component number(int value) {
         return Component.literal(Integer.toString(value));
     }
-
-    static Component blocks(int value) {
-        return Component.translatable(key("unit.blocks"), value);
-    }
 }
+

@@ -53,6 +53,16 @@ public class PoltergeistParticle extends WanderingSpiritParticle {
     }
 
     @Override
+    boolean glows() {
+        return false;
+    }
+
+    @Override
+    protected float modelOpacity() {
+        return 0.5F;
+    }
+
+    @Override
     protected boolean burstOnSpawn() {
         return true;
     }

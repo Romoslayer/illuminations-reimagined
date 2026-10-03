@@ -24,16 +24,26 @@ import io.github.illuminationsreimagined.client.IlluminationsConfigScreen;
 import io.github.illuminationsreimagined.config.IlluminationsConfig;
 import io.github.illuminationsreimagined.config.SeasonalMode;
 import io.github.illuminationsreimagined.config.SpawnRate;
+import io.github.illuminationsreimagined.particle.AmbientParticle;
+import io.github.illuminationsreimagined.particle.EyesParticle;
+import io.github.illuminationsreimagined.particle.FireflyParticle;
 import io.github.illuminationsreimagined.particle.ParticleKind;
 import io.github.illuminationsreimagined.particle.ParticleTracker;
+import io.github.illuminationsreimagined.particle.PoltergeistParticle;
+import io.github.illuminationsreimagined.particle.PumpkinSpiritParticle;
 import io.github.illuminationsreimagined.particle.Sprites;
+import io.github.illuminationsreimagined.particle.WillOWispParticle;
 import io.github.illuminationsreimagined.world.BiomeGroup;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,9 +58,7 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
         // Make every effect frequent so the test is fast and deterministic enough.
         context.runOnClient(client -> {
             IlluminationsConfig config = IlluminationsConfig.get();
-            config.density = 400;
-            config.spawnRadius = 24;
-            config.samplesPerTick = 256;
+            config.density = 1000;
             config.biomeGroup(BiomeGroup.PLAINS).plankton = SpawnRate.HIGH;
             config.biomeGroup(BiomeGroup.PLAINS).fireflies = SpawnRate.HIGH;
             config.biomeGroup(BiomeGroup.PLAINS).glowworms = SpawnRate.HIGH;
@@ -69,14 +77,19 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             world.getServer().runCommand("gamerule advance_time false");
             world.getServer().runCommand("gamerule advance_weather false");
 
-            // Sealed, unlit stone room for glowworms and eyes (12-22 blocks away, so beyond the eyes' minimum distance).
-            fill(world, x + 12, y - 1, z - 6, x + 22, y + 6, z + 6, "stone hollow");
+            // Sealed, unlit stone room for glowworms and eyes (12-30 blocks away, so beyond the eyes' vanishing distance),
+            // large because the spawner samples a wide area thinly, as the original did.
+            fill(world, x + 12, y - 1, z - 12, x + 30, y + 8, z + 12, "stone hollow");
             // Chorus flower on end stone.
             world.getServer().runCommand(String.format("setblock %d %d %d end_stone", x - 6, y - 1, z + 4));
             world.getServer().runCommand(String.format("setblock %d %d %d chorus_flower", x - 6, y, z + 4));
             // Covered (dark) water pool with a sea lantern at one end.
             fill(world, x - 20, y - 1, z - 8, x - 8, y + 6, z + 8, "stone hollow");
             fill(world, x - 19, y, z - 7, x - 9, y + 5, z + 7, "water");
+            // A separate unlit pool for plankton (the lanterns light up the first one), big enough that the spawner's
+            // wide sampling lands in it often.
+            fill(world, x - 8, y - 1, z - 30, x + 8, y + 5, z - 16, "stone hollow");
+            fill(world, x - 7, y, z - 29, x + 7, y + 4, z - 17, "water");
             // Several lanterns so random display ticks reach one often enough for a reliable check.
             for (int[] l : new int[][]{{-10, 2, 0}, {-12, 1, -4}, {-12, 1, 4}, {-15, 3, 0}}) {
                 world.getServer().runCommand(String.format("setblock %d %d %d sea_lantern", x + l[0], y + l[1], z + l[2]));
@@ -123,7 +136,19 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
 
             require(night.get(ParticleKind.FIREFLY) > 0, "fireflies spawn at night in plains");
             require(night.get(ParticleKind.GLOWWORM) > 0, "glowworms spawn under a ceiling");
-            require(night.get(ParticleKind.EYES) > 0, "eyes spawn in total darkness");
+            // Natural eyes are rare by design (as in the original), so only log them; check their behaviour directly.
+            IlluminationsReimagined.LOGGER.info("[gametest] eyes spawned naturally: {}", night.get(ParticleKind.EYES));
+            List<EyesParticle> eyes = context.computeOnClient(c -> {
+                EyesParticle inDark = new EyesParticle(c.level, x + 17.5, y + 2.5, z + 0.5);
+                EyesParticle nearPlayer = new EyesParticle(c.level, x + 2.5, y + 1.5, z + 0.5);
+                ParticleTracker.spawn(inDark);
+                ParticleTracker.spawn(nearPlayer);
+                return List.of(inDark, nearPlayer);
+            });
+            context.waitTicks(20);
+            List<Boolean> eyesAlive = context.computeOnClient(c -> eyes.stream().map(EyesParticle::isAlive).toList());
+            require(eyesAlive.get(0), "eyes keep watching from total darkness");
+            require(!eyesAlive.get(1), "eyes close when a player is close");
             require(night.get(ParticleKind.CHORUS_PETAL) > 0, "chorus flower sheds petals");
             require(night.get(ParticleKind.PRISMARINE_CRYSTAL) > 0, "sea lantern spawns crystals");
             require(night.get(ParticleKind.PLANKTON) > 0, "plankton spawns in dark water");
@@ -147,6 +172,52 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             int petalsAfter = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.CHORUS_PETAL));
             IlluminationsReimagined.LOGGER.info("[gametest] petals before/after break: {} / {}", petalsBefore, petalsAfter);
             require(petalsAfter > petalsBefore, "breaking a chorus flower bursts petals");
+
+            // Spirits and fireflies that hit the ground keep moving. Vanilla's collision latch used to freeze them for good
+            // (spirits spun on the spot) the first time a downward move was fully blocked.
+            List<AmbientParticle> fliers = context.computeOnClient(c -> {
+                List<AmbientParticle> spawned = new ArrayList<>();
+                // Natural fireflies already fill the cap here; make room for these few.
+                int fireflyCap = IlluminationsConfig.get().fireflies.maxCount;
+                IlluminationsConfig.get().fireflies.maxCount = fireflyCap + 10;
+                for (int i = 0; i < 10; i++) {
+                    double fx = x - 4 + i;
+                    double fz = z + 14;
+                    double ground = c.level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(fx), (int) Math.floor(fz)) + 0.05;
+                    AmbientParticle particle = switch (i) {
+                        case 0, 1, 2 -> new WillOWispParticle(c.level, fx, ground, fz);
+                        case 3 -> new PumpkinSpiritParticle(c.level, fx, ground, fz);
+                        case 4 -> new PoltergeistParticle(c.level, fx, ground, fz);
+                        default -> FireflyParticle.create(c.level, fx, ground, fz, 0x9AFF3C);
+                    };
+                    particle.setParticleSpeed(0.0, i < 5 ? -0.3 : -0.05, 0.0);
+                    if (ParticleTracker.spawn(particle)) {
+                        spawned.add(particle);
+                    }
+                }
+                IlluminationsConfig.get().fireflies.maxCount = fireflyCap;
+                return spawned;
+            });
+            int frozen = 0;
+            int checked = 0;
+            List<Vec3> previous = context.computeOnClient(c -> fliers.stream().map(AmbientParticle::currentPosition).toList());
+            for (int round = 0; round < 4; round++) {
+                context.waitTicks(10);
+                List<Vec3> now = context.computeOnClient(c -> fliers.stream().map(AmbientParticle::currentPosition).toList());
+                List<Boolean> alive = context.computeOnClient(c -> fliers.stream().map(AmbientParticle::isAlive).toList());
+                for (int i = 0; i < fliers.size(); i++) {
+                    if (alive.get(i)) {
+                        checked++;
+                        if (now.get(i).equals(previous.get(i))) {
+                            frozen++;
+                        }
+                    }
+                }
+                previous = now;
+            }
+            IlluminationsReimagined.LOGGER.info("[gametest] grounded fliers frozen: {} of {} checks ({} spawned)", frozen, checked, fliers.size());
+            require(fliers.size() >= 8 && checked > 0, "spirits and fireflies spawn for the grounding check");
+            require(frozen == 0, "spirits and fireflies keep moving after touching the ground");
 
             // Daylight: fireflies fade out.
             world.getServer().runCommand("time set noon");

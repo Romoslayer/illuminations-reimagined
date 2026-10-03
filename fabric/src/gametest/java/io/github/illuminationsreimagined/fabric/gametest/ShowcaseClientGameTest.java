@@ -130,7 +130,7 @@ public class ShowcaseClientGameTest implements FabricClientGameTest {
                 ParticleTracker.spawn(new PoltergeistParticle(level, x + 6, y + 3.5, z - 1.5));
                 for (int i = 0; i < 20; i++) {
                     ParticleTracker.spawn(new ChorusPetalParticle(level, x + 8.5, y + 1.6, z + 3.5,
-                            r.nextGaussian() * 0.05, r.nextGaussian() * 0.04 + 0.04, r.nextGaussian() * 0.05, true));
+                            r.nextGaussian() * 0.05, r.nextGaussian() * 0.04 + 0.04, r.nextGaussian() * 0.05));
                 }
             });
             context.waitTicks(6);

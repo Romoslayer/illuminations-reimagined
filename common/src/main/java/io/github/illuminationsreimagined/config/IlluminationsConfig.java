@@ -57,11 +57,6 @@ public final class IlluminationsConfig {
     public boolean enabled = true;
     /** Global density multiplier in percent (0 – 1000). */
     public int density = 100;
-    /** Horizontal radius, in blocks, around the camera in which ambient effects may spawn (16 – 96). */
-    public int spawnRadius = 48;
-    /** Number of candidate positions examined each client tick (8 – 256). Higher = denser but slower. */
-    public int samplesPerTick = 48;
-
     // ---- per-effect ----
     public Fireflies fireflies = new Fireflies();
     public Glowworms glowworms = new Glowworms();
@@ -85,8 +80,8 @@ public final class IlluminationsConfig {
         public int coreBrightness = 100;
         /** Random hue for every firefly instead of the biome colour. */
         public boolean rainbow = false;
-        /** Orange "autumn" tint during October. */
-        public SeasonalMode autumnColors = SeasonalMode.SEASONAL;
+        /** Orange "autumn" tint during October. Not in the original mod, so off by default. */
+        public SeasonalMode autumnColors = SeasonalMode.DISABLED;
         /** Fireflies drift toward nearby light sources they can see. */
         public boolean lightAttraction = true;
     }
@@ -96,7 +91,8 @@ public final class IlluminationsConfig {
     }
 
     public static final class Plankton {
-        public int maxCount = 200;
+        /** High because the original had no cap and keeps around a thousand specks alive near oceans at night. */
+        public int maxCount = 1000;
     }
 
     public static final class Eyes {
@@ -238,8 +234,6 @@ public final class IlluminationsConfig {
     public void sanitize() {
         this.configVersion = CURRENT_VERSION;
         this.density = Mth.clamp(this.density, 0, 1000);
-        this.spawnRadius = Mth.clamp(this.spawnRadius, 16, 96);
-        this.samplesPerTick = Mth.clamp(this.samplesPerTick, 8, 256);
 
         if (this.fireflies == null) this.fireflies = new Fireflies();
         if (this.glowworms == null) this.glowworms = new Glowworms();
@@ -252,7 +246,7 @@ public final class IlluminationsConfig {
 
         this.fireflies.maxCount = Mth.clamp(this.fireflies.maxCount, 0, 2000);
         this.fireflies.coreBrightness = Mth.clamp(this.fireflies.coreBrightness, 0, 100);
-        if (this.fireflies.autumnColors == null) this.fireflies.autumnColors = SeasonalMode.SEASONAL;
+        if (this.fireflies.autumnColors == null) this.fireflies.autumnColors = SeasonalMode.DISABLED;
         this.glowworms.maxCount = Mth.clamp(this.glowworms.maxCount, 0, 2000);
         this.plankton.maxCount = Mth.clamp(this.plankton.maxCount, 0, 2000);
         if (this.eyesInTheDark.mode == null) this.eyesInTheDark.mode = SeasonalMode.SEASONAL;

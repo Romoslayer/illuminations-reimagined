@@ -27,10 +27,8 @@ import io.github.illuminationsreimagined.particle.Sprites;
 import io.github.illuminationsreimagined.particle.WillOWispParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -69,31 +67,36 @@ public final class BlockAmbience {
         }
     }
 
-    /** Petal burst when a chorus flower is broken (younger flowers burst more). */
+    /** Petal burst when a chorus flower is broken: ten times its usual petals (younger flowers burst more). */
     public static void onBlockDestroyed(ClientLevel level, BlockPos pos, BlockState state) {
         IlluminationsConfig config = IlluminationsConfig.get();
         if (!config.enabled || !config.chorusPetals.burstOnBreak || !state.is(Blocks.CHORUS_FLOWER)) {
             return;
         }
         RandomSource random = level.getRandom();
-        int count = (ChorusFlowerBlock.DEAD_AGE + 1 - state.getValue(ChorusFlowerBlock.AGE)) * 6 * Math.max(1, config.chorusPetals.multiplier);
+        int count = petalCount(state, config) * 10;
         for (int i = 0; i < count && ParticleTracker.hasRoom(ParticleKind.CHORUS_PETAL); i++) {
             ParticleTracker.spawn(new ChorusPetalParticle(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    random.nextGaussian() * 0.08, random.nextGaussian() * 0.08 + 0.05, random.nextGaussian() * 0.08, true));
+                    random.nextGaussian() / 10.0, random.nextGaussian() / 10.0, random.nextGaussian() / 10.0));
         }
     }
 
+    /** Younger flowers shed more petals, scattered in a wide cloud around the flower. */
     private static void spawnChorusPetals(ClientLevel level, BlockPos pos, BlockState state, RandomSource random, IlluminationsConfig config) {
-        int count = (ChorusFlowerBlock.DEAD_AGE + 1 - state.getValue(ChorusFlowerBlock.AGE)) * config.chorusPetals.multiplier;
+        int count = petalCount(state, config);
         for (int i = 0; i < count && ParticleTracker.hasRoom(ParticleKind.CHORUS_PETAL); i++) {
-            double x = pos.getX() + 0.5 + random.nextGaussian() * 3.0;
-            double y = pos.getY() + 0.5 + random.nextGaussian() * 2.0;
-            double z = pos.getZ() + 0.5 + random.nextGaussian() * 3.0;
+            double x = pos.getX() + 0.5 + random.nextGaussian() * 5.0;
+            double y = pos.getY() + 0.5 + random.nextGaussian() * 5.0;
+            double z = pos.getZ() + 0.5 + random.nextGaussian() * 5.0;
             PROBE.set(x, y, z);
-            if (level.isLoaded(PROBE) && level.getBlockState(PROBE).isAir()) {
-                ParticleTracker.spawn(new ChorusPetalParticle(level, x, y, z, 0.0, 0.0, 0.0, false));
+            if (level.isLoaded(PROBE)) {
+                ParticleTracker.spawn(new ChorusPetalParticle(level, x, y, z, 0.0, 0.0, 0.0));
             }
         }
+    }
+
+    private static int petalCount(BlockState state, IlluminationsConfig config) {
+        return (ChorusFlowerBlock.DEAD_AGE + 1 - state.getValue(ChorusFlowerBlock.AGE)) * config.chorusPetals.multiplier;
     }
 
     /** Crystals appear in the water around a sea lantern, more often in the dimmer water further out. */
@@ -101,16 +104,13 @@ public final class BlockAmbience {
         if (!config.prismarineCrystals.enabled) {
             return;
         }
-        for (int i = 0; i < 6 && ParticleTracker.hasRoom(ParticleKind.PRISMARINE_CRYSTAL); i++) {
-            PROBE.set(Mth.floor(pos.getX() + 0.5 + random.nextGaussian() * 8.0),
-                    Mth.floor(pos.getY() + 0.5 + random.nextGaussian() * 8.0),
-                    Mth.floor(pos.getZ() + 0.5 + random.nextGaussian() * 8.0));
-            if (!level.isLoaded(PROBE) || !level.getFluidState(PROBE).is(FluidTags.WATER)) {
-                continue;
-            }
-            if (random.nextInt(1 + level.getBrightness(LightLayer.BLOCK, PROBE)) == 0) {
-                ParticleTracker.spawn(new PrismarineCrystalParticle(level,
-                        PROBE.getX() + random.nextDouble(), PROBE.getY() + random.nextDouble(), PROBE.getZ() + random.nextDouble()));
+        for (int i = 0; i < 10 && ParticleTracker.hasRoom(ParticleKind.PRISMARINE_CRYSTAL); i++) {
+            PROBE.set(Mth.floor(pos.getX() + 0.5 + random.nextGaussian() * 15.0),
+                    Mth.floor(pos.getY() + 0.5 + random.nextGaussian() * 15.0),
+                    Mth.floor(pos.getZ() + 0.5 + random.nextGaussian() * 15.0));
+            if (level.isLoaded(PROBE) && level.getBlockState(PROBE).is(Blocks.WATER)
+                    && random.nextInt(1 + level.getMaxLocalRawBrightness(PROBE)) == 0) {
+                ParticleTracker.spawn(new PrismarineCrystalParticle(level, PROBE.getX(), PROBE.getY(), PROBE.getZ()));
             }
         }
     }

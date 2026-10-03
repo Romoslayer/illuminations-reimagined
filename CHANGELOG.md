@@ -20,20 +20,20 @@ First version of Illuminations Reimagined, an unofficial continuation of Illumin
 - In-game settings screen built from vanilla option widgets, with a per-biome sub-screen and a reset button. Opens from Mod Menu (optional) on Fabric and from the Mods screen on NeoForge.
 - Biome rules use biome tags (vanilla and `c:` conventions) instead of `Biome.Category` and pre-1.18 biome IDs.
 - Particles are created directly instead of being registered as particle types.
-- Will o' wisps keep the original's behaviour (fast darting flight, white-to-cyan spark trails, gliding through soul sand, sounds and death burst) but are drawn as animated billboards instead of 3D entity models rendered through a private buffer.
-- Pumpkin spirits and poltergeists (Halloween, night only) keep the original's behaviour (spawn bursts, yellow-to-red pumpkin trails, death bursts and sounds), drawn as animated billboards. Poltergeists from undead deaths use the client's death event. Both stay dormant until their textures exist.
+- Every effect keeps the original's behaviour: where and how often it spawns, its size, colours, blinking, movement and lifetime, the default per-biome settings and the night window. Will o' wisps, pumpkin spirits and poltergeists are 3D heads that face their direction of travel, as in the original. Poltergeists from undead deaths use the client's death event.
+- New options, with defaults that match the original: autumn firefly colours (off), light attraction for fireflies, separate switches for each spirit source, petal bursts and prismarine crystals, separate seasonal settings for the eyes and the spirits, and a count cap per effect. Spirits stay dormant until their textures exist.
 - Particles left far behind the player (teleports, fast travel) are removed instead of ticking until they expire.
 
 ### Fixed
-- Fireflies teleporting onto light sources (the light search never returned "none").
-- Fireflies freezing mid-air (movement was skipped inside the target block, and targets only changed on ticks divisible by 20).
-- Fireflies diving to y≈0 when far above the ground (0 was used as "not found").
-- Negative retarget cooldowns (`nextInt() % 100`).
-- Light attraction through walls (light targets now need line of sight).
+- Fireflies never dying: when they faded out, the blink picked a new brightness, so they lived forever.
+- Fireflies teleporting onto light sources, and being drawn to unlit blocks and to lights behind walls.
+- Fireflies diving to y≈0 when more than 20 blocks above the ground (0 was used as "not found"), and flying toward the world origin before their first retarget (spirits too).
 - Spawning in unloaded chunks and outside the build height.
 - Excessive per-tick work (about 1,300 biome registry lookups per tick) and per-frame allocations.
 - No upper bound on particle counts. Every effect now has a configurable cap, and counts survive world and dimension changes, disconnects and resource reloads.
 - Glowworms allocating `new Random()` every tick, searching for ceilings only up to y=255, and never appearing in modern noise caves.
-- Plankton being pushed upward out of water.
-- Eyes in the dark appearing in large numbers in the Nether and End, and running game logic in render code.
-- Chorus petals always blowing in the same direction, and the petal hook breaking.
+- Plankton that left the water (or spawned in a puddle) rising into the sky forever.
+- Eyes in the dark running game logic in render code.
+- The chorus petal hook breaking.
+- Poltergeists from undead deaths never appearing (the original spawned them on the server, where particles do nothing).
+- Spirits, fireflies and plankton freezing for good after brushing a floor or ceiling (vanilla's particle collision stops a particle permanently once a vertical move is blocked); stuck spirits spun on the spot. Spirit models are now centred in their hitbox, so they no longer sink halfway into the block they touch.
