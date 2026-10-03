@@ -1,0 +1,41 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'Fabric'
+                    url = uri('https://maven.fabricmc.net')
+                }
+            }
+            filter {
+                includeGroupAndSubgroups('net.fabricmc')
+            }
+        }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+// Select the Minecraft version to build against with -Pmc=<version> (default: newest supported).
+// Every supported version has a properties file in versions/ holding the version-specific
+// dependency coordinates; those values are injected into every project as extra properties.
+def supportedVersions = ['26.3', '26.2']
+def mc = providers.gradleProperty('mc').getOrElse(supportedVersions[0])
+if (!supportedVersions.contains(mc)) {
+    throw new GradleException("Unsupported Minecraft version '${mc}'. Supported: ${supportedVersions.join(', ')}")
+}
+def versionProps = new Properties()
+file("versions/${mc}.properties").withInputStream { versionProps.load(it) }
+gradle.beforeProject { Project p ->
+    versionProps.each { k, v -> p.ext.set(k as String, v) }
+}
+
+rootProject.name = 'Illuminations Reimagined'
+includeBuild('build-logic')
+include('common')
+include('fabric')
+include('neoforge')

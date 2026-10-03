@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "${description}",
+  "authors": [
+    "${mod_author}"
+  ],
+  "contributors": [
+    "doctor4t and the Ladysnake contributors (original Illuminations; not involved in this continuation)"
+  ],
+  "contact": {
+    "sources": "https://github.com/Romoslayer/illuminations-reimagined",
+    "issues": "https://github.com/Romoslayer/illuminations-reimagined/issues"
+  },
+  "license": "${license}",
+  "icon": "assets/${mod_id}/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.github.illuminationsreimagined.fabric.IlluminationsReimaginedFabric"
+    ]
+  },
+  "mixins": [
+    "${mod_id}.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${fabric_minecraft_range}",
+    "java": ">=${java_version}"
+  },
+  "breaks": {
+    "illuminations": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.original": "https://github.com/Ladysnake/Illuminations"
+      }
+    }
+  }
+}

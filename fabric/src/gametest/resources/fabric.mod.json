@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "illuminations_reimagined_gametest",
+  "version": "1.0.0",
+  "name": "Illuminations Reimagined Game Tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "io.github.illuminationsreimagined.fabric.gametest.AmbientEffectsClientGameTest"
+    ]
+  },
+  "depends": {
+    "illuminations_reimagined": "*"
+  }
+}
