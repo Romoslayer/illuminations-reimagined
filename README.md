@@ -51,7 +51,7 @@ Chorus and Prismarine crowns, horns, halos, tiaras, wreaths, pride-heart and oth
 cosmetics dashboard and its UUID-based network lookups, the self-updater and its bundled uninstaller, the
 donation, update and greeting screens, and the override of Minecraft's own particle shader.
 
-**Rewritten and fixed** (details in [`CHANGELOG.md`](CHANGELOG.md) and [`docs/SOURCE_AUDIT.md`](docs/SOURCE_AUDIT.md)):
+**Rewritten and fixed** (details in [`CHANGELOG.md`](CHANGELOG.md)):
 
 * Fireflies no longer **teleport** onto light sources, **freeze** mid-air, or **dive** toward y = 0.
   Light attraction only follows lights the firefly can actually see.
@@ -76,16 +76,12 @@ donation, update and greeting screens, and the override of Minecraft's own parti
 Jars are written to `fabric/build/libs/` and `neoforge/build/libs/`. Version-specific dependency versions live
 in `versions/<mc>.properties`.
 
-Particle textures are PNGs with transparency. Runtime-tinted textures use white and grey only;
-animation frames and variants are separate numbered files. See [`docs/ASSETS.md`](docs/ASSETS.md).
-
 ## Licensing
 
 * **Code:** GPL-3.0-or-later. This is a modified version of Illuminations, © 2021 Ladysnake, GPL-3.0-or-later;
   modifications © 2026 Romoslayer. See [`LICENSE`](LICENSE) and [`NOTICE.md`](NOTICE.md).
-* **Artwork:** all textures and the icon are **newly created** for this project (see
-  [`docs/ASSETS.md`](docs/ASSETS.md) and [`LICENSE-ASSETS.md`](LICENSE-ASSETS.md)). None of the original
-  Illuminations artwork (All Rights Reserved, Ladysnake) is included.
+* **Textures:** none of the original Illuminations textures or other artwork (All Rights Reserved, Ladysnake) are
+  used in this project. See [`LICENSE-ASSETS.md`](LICENSE-ASSETS.md).
 * **Source:** the complete corresponding source code is available in this repository.
 
 ## Credits

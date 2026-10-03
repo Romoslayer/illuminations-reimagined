@@ -30,16 +30,14 @@ GNU General Public License, version 3 or (at your option) any later version:
 > License, or (at your option) any later version.
 
 Upstream source: <https://github.com/Ladysnake/Illuminations> (branch `main`, version 1.10.2).
-This project uses the `main` branch only; see `docs/SOURCE_AUDIT.md` for why the later `1.18` branch is not used.
+This project is based on the `main` branch only.
 
-Most systems were rewritten rather than ported line by line. See `CHANGELOG.md` and `docs/SOURCE_AUDIT.md` for
-what changed and why (GPL-3.0 §5(a): modified versions must carry prominent notices of the changes).
+Most systems were rewritten rather than ported line by line. See `CHANGELOG.md` for what changed (GPL-3.0 §5(a): modified versions must carry prominent notices of the changes).
 
 ## Artwork
 
-The original Illuminations artwork is **All Rights Reserved, Copyright (C) 2017-2021 Ladysnake**, and is **not**
-included in, or used to create, anything in this project. Every texture and icon in Illuminations Reimagined was
-created from scratch for this project. See `LICENSE-ASSETS.md` and `docs/ASSETS.md`.
+The original Illuminations artwork is **All Rights Reserved, Copyright (C) 2017-2021 Ladysnake**. None of the
+original mod's textures or other artwork are used in this project. See `LICENSE-ASSETS.md`.
 
 ## Not included
 
