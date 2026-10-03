@@ -39,6 +39,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -170,9 +171,12 @@ public final class AmbientSpawner {
                 && (config.fireflies.spawnUnderground || level.canSeeSky(POS));
     }
 
-    /** Cave air, or plain air out of sight of the sky (modern noise caves are not filled with cave air). */
+    /**
+     * Cave air, or plain air that no daylight reaches. Modern noise caves are filled with plain air rather than cave air;
+     * the sky-light test keeps glowworms out from under tree canopies and out of houses with windows or doors.
+     */
     private static boolean isCaveAir(ClientLevel level, BlockState state) {
-        return state.is(Blocks.CAVE_AIR) || (state.is(Blocks.AIR) && !level.canSeeSky(POS));
+        return state.is(Blocks.CAVE_AIR) || (state.is(Blocks.AIR) && level.getBrightness(LightLayer.SKY, POS) == 0);
     }
 
     /** Glowworms climb straight up from the sampled spot to the first block above and hang just under it. */

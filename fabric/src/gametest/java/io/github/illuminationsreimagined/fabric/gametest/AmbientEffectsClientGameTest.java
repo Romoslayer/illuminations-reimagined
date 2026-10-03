@@ -40,6 +40,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -83,6 +84,8 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             // Sealed, unlit stone room for glowworms and eyes (12-30 blocks away, so beyond the eyes' vanishing distance),
             // large because the spawner samples a wide area thinly, as the original did.
             fill(world, x + 12, y - 1, z - 12, x + 30, y + 8, z + 12, "stone hollow");
+            // A canopy of leaves over open air, where glowworms must not appear.
+            fill(world, x - 40, y + 6, z + 12, x - 24, y + 6, z + 30, "oak_leaves[persistent=true]");
             // Chorus flower on end stone.
             world.getServer().runCommand(String.format("setblock %d %d %d end_stone", x - 6, y - 1, z + 4));
             world.getServer().runCommand(String.format("setblock %d %d %d chorus_flower", x - 6, y, z + 4));
@@ -141,6 +144,11 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
 
             require(night.get(ParticleKind.FIREFLY) > 0, "fireflies spawn at night in plains");
             require(night.get(ParticleKind.GLOWWORM) > 0, "glowworms spawn under a ceiling");
+            // Glowworms belong in caves, not under tree canopies: count any hanging from leaves.
+            int onLeaves = context.computeOnClient(c -> (int) ParticleTracker.positions(ParticleKind.GLOWWORM).stream()
+                    .filter(pos -> c.level.getBlockState(BlockPos.containing(pos.x, pos.y + 0.5, pos.z)).is(BlockTags.LEAVES)).count());
+            IlluminationsReimagined.LOGGER.info("[gametest] glowworms hanging from leaves: {}", onLeaves);
+            require(onLeaves == 0, "glowworms do not spawn under tree leaves");
             // Natural eyes are rare by design (as in the original), so only log them; check their behaviour directly.
             IlluminationsReimagined.LOGGER.info("[gametest] eyes spawned naturally: {}", night.get(ParticleKind.EYES));
             List<EyesParticle> eyes = context.computeOnClient(c -> {
