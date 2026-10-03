@@ -84,6 +84,17 @@ public final class ParticleTracker {
         return true;
     }
 
+    /** Positions of the live particles of one kind (used by tests and debugging tools). */
+    public static List<net.minecraft.world.phys.Vec3> positions(ParticleKind kind) {
+        List<net.minecraft.world.phys.Vec3> out = new ArrayList<>();
+        for (AmbientParticle p : LIVE.get(kind)) {
+            if (p.isAlive()) {
+                out.add(p.currentPosition());
+            }
+        }
+        return out;
+    }
+
     public static String describe() {
         StringBuilder sb = new StringBuilder();
         LIVE.forEach((kind, list) -> sb.append(kind).append('=').append(list.size()).append(' '));

@@ -78,19 +78,41 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             fill(world, x - 20, y - 1, z - 8, x - 8, y + 6, z + 8, "stone hollow");
             fill(world, x - 19, y, z - 7, x - 9, y + 5, z + 7, "water");
             world.getServer().runCommand(String.format("setblock %d %d %d sea_lantern", x - 10, y + 2, z));
-            // Halloween spirit sources: several jack o'lanterns and skeleton skulls.
-            for (int i = 0; i < 6; i++) {
-                world.getServer().runCommand(String.format("setblock %d %d %d jack_o_lantern", x + 2 + i, y, z - 10));
-                world.getServer().runCommand(String.format("setblock %d %d %d skeleton_skull", x + 2 + i, y, z + 10));
-            }
+            // Halloween spirit sources: 5x5 patches of jack o'lanterns and skeleton skulls close to the player, so random
+            // display ticks reach them often enough for a reliable test (each has a 1-in-100 chance per hit).
+            fill(world, x + 3, y, z - 7, x + 7, y, z - 3, "jack_o_lantern");
+            fill(world, x + 3, y, z + 3, x + 7, y, z + 7, "skeleton_skull");
             // Soul lantern.
             world.getServer().runCommand(String.format("setblock %d %d %d soul_lantern", x - 4, y, z - 6));
             // Face the chorus flower / pool.
             world.getServer().runCommand(String.format("tp @p %d %d %d 90 10", x, y, z));
 
-            context.waitTicks(400);
-            Map<ParticleKind, Integer> night = counts(context);
+            // Track the highest count seen for each effect over 20 seconds (rare, fast spirits may come and go).
+            Map<ParticleKind, Integer> night = new EnumMap<>(ParticleKind.class);
+            int[] maxStuck = {0};
+            int[] spiritSamples = {0};
+            for (int i = 0; i < 20; i++) {
+                context.waitTicks(20);
+                counts(context).forEach((kind, count) -> night.merge(kind, count, Math::max));
+                int[] stuck = context.computeOnClient(c -> {
+                    int inside = 0;
+                    int total = 0;
+                    for (ParticleKind kind : new ParticleKind[]{ParticleKind.WILL_O_WISP, ParticleKind.PUMPKIN_SPIRIT, ParticleKind.POLTERGEIST}) {
+                        for (net.minecraft.world.phys.Vec3 pos : ParticleTracker.positions(kind)) {
+                            BlockPos bp = BlockPos.containing(pos);
+                            total++;
+                            if (!c.level.getBlockState(bp).getCollisionShape(c.level, bp).isEmpty()) {
+                                inside++;
+                            }
+                        }
+                    }
+                    return new int[]{inside, total};
+                });
+                maxStuck[0] = Math.max(maxStuck[0], stuck[0]);
+                spiritSamples[0] += stuck[1];
+            }
             IlluminationsReimagined.LOGGER.info("[gametest] counts after 400 night ticks: {}", night);
+            IlluminationsReimagined.LOGGER.info("[gametest] spirits inside a block at once (max): {} of {} sampled", maxStuck[0], spiritSamples[0]);
             context.takeScreenshot("illuminations_night_west");
             world.getServer().runCommand(String.format("tp @p %d %d %d -90 0", x, y, z));
             context.waitTicks(5);
@@ -102,7 +124,7 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             require(night.get(ParticleKind.CHORUS_PETAL) > 0, "chorus flower sheds petals");
             require(night.get(ParticleKind.PRISMARINE_CRYSTAL) > 0, "sea lantern spawns crystals");
             require(night.get(ParticleKind.PLANKTON) > 0, "plankton spawns in dark water");
-            boolean spiritArt = context.computeOnClient(c -> Sprites.isAvailable(Sprites.PUMPKIN_SPIRIT[0]) && Sprites.isAvailable(Sprites.POLTERGEIST[0]));
+            boolean spiritArt = context.computeOnClient(c -> Sprites.isSkinAvailable(Sprites.PUMPKIN_SPIRIT_SKIN) && Sprites.isSkinAvailable(Sprites.POLTERGEIST_SKIN));
             int spirits = night.get(ParticleKind.PUMPKIN_SPIRIT) + night.get(ParticleKind.POLTERGEIST);
             if (spiritArt) {
                 require(night.get(ParticleKind.PUMPKIN_SPIRIT) > 0, "jack o'lanterns release pumpkin spirits");

@@ -19,20 +19,22 @@
 package io.github.illuminationsreimagined.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.util.Mth;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * A poltergeist: a translucent spectral skull that rises from skeleton skulls (and sometimes from undead that die at
- * night) on Halloween, darting about erratically while it slowly pulses in and out of sight. Final-colour sprites.
+ * A poltergeist: a spectral skull that appears in a burst of white sparks from skeleton skulls (and sometimes from
+ * undead that die at night) on Halloween, darts around restlessly, and shatters into skull fragments when it fades.
+ * Unlike wisps it leaves no continuous trail. Rendered as a small 3D head ({@link SpiritModel}).
  */
 public class PoltergeistParticle extends WanderingSpiritParticle {
-    private final float pulsePhase;
+    private static final float[] TRAIL_COLOR = {1.0F, 1.0F, 1.0F};
+    private static final float[] TRAIL_STEP = {0.0F, 0.0F, 0.0F};
 
     public PoltergeistParticle(ClientLevel level, double x, double y, double z) {
-        super(level, x, y, z, Sprites.POLTERGEIST, 3, 0.85F);
-        this.quadSize = 0.22F + this.random.nextFloat() * 0.06F;
-        this.lifetime = 200 + this.random.nextInt(300);
-        this.pulsePhase = this.random.nextFloat() * Mth.TWO_PI;
+        super(level, x, y, z, Sprites.POLTERGEIST_SKIN, TRAIL_COLOR, TRAIL_STEP);
     }
 
     @Override
@@ -41,31 +43,47 @@ public class PoltergeistParticle extends WanderingSpiritParticle {
     }
 
     @Override
-    protected double wanderRange() {
-        return 8.0;
+    protected int retargetInterval() {
+        return 100;
     }
 
     @Override
-    protected double steering() {
-        return 0.008;
+    protected boolean continuousTrail() {
+        return false;
     }
 
     @Override
-    protected double maxSpeed() {
-        return 0.12;
+    protected boolean burstOnSpawn() {
+        return true;
     }
 
     @Override
-    protected int retargetDelay() {
-        return 15;
+    protected BlockState deathBlock() {
+        return Blocks.SKELETON_SKULL.defaultBlockState();
     }
 
     @Override
-    protected void tickAppearance() {
-        // Fade between faint and solid so it seems to flicker in and out of the world.
-        float pulse = 0.65F + 0.35F * Mth.sin(this.age * 0.15F + this.pulsePhase);
-        this.rCol = pulse;
-        this.gCol = pulse;
-        this.bCol = Math.min(1.0F, pulse + 0.1F);
+    protected SoundEvent ambientSound() {
+        return SoundEvents.VEX_AMBIENT;
+    }
+
+    @Override
+    protected float ambientPitch() {
+        return 0.8F;
+    }
+
+    @Override
+    protected int ambientSoundChance() {
+        return 20;
+    }
+
+    @Override
+    protected SoundEvent[] deathSounds() {
+        return new SoundEvent[]{SoundEvents.VEX_DEATH, SoundEvents.SKELETON_DEATH};
+    }
+
+    @Override
+    protected float[] deathPitches() {
+        return new float[]{0.8F, 1.0F};
     }
 }

@@ -89,3 +89,26 @@ tasks.matching { it.name == 'runClientGameTest' }.configureEach {
         }
     }
 }
+
+// ./gradlew :fabric:runClientGameTest -Pgallery captures 1920x1080 gallery screenshots into fabric/build/gallery.
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+    if (project.hasProperty('spiritPreview')) {
+        systemProperty('illuminations_reimagined.spiritPreview', 'true')
+        systemProperty('illuminations_reimagined.galleryDir', layout.buildDirectory.dir('gallery').get().asFile.absolutePath)
+    }
+    if (project.hasProperty('gallery')) {
+        systemProperty('illuminations_reimagined.gallery', 'true')
+        systemProperty('illuminations_reimagined.galleryDir', layout.buildDirectory.dir('gallery').get().asFile.absolutePath)
+        if (project.hasProperty('galleryShots')) {
+            systemProperty('illuminations_reimagined.galleryShots', project.property('galleryShots').toString())
+        }
+    }
+}
+
+// ./gradlew :fabric:runClientGameTest -Pshowcase saves one screenshot of every effect to fabric/build/gallery/showcase.png.
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+    if (project.hasProperty('showcase')) {
+        systemProperty('illuminations_reimagined.showcase', 'true')
+        systemProperty('illuminations_reimagined.galleryDir', layout.buildDirectory.dir('gallery').get().asFile.absolutePath)
+    }
+}

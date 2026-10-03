@@ -20,8 +20,8 @@ First version of Illuminations Reimagined, an unofficial continuation of Illumin
 - In-game settings screen built from vanilla option widgets, with a per-biome sub-screen and a reset button. Opens from Mod Menu (optional) on Fabric and from the Mods screen on NeoForge.
 - Biome rules use biome tags (vanilla and `c:` conventions) instead of `Biome.Category` and pre-1.18 biome IDs.
 - Particles are created directly instead of being registered as particle types.
-- Will o' wisps are animated billboards with ember trails instead of entity models.
-- Pumpkin spirits and poltergeists (Halloween, night only) are animated billboards sharing the wisps' movement. Poltergeists from undead deaths use the client's death event. Both stay dormant until their textures exist.
+- Will o' wisps keep the original's behaviour (fast darting flight, white-to-cyan spark trails, gliding through soul sand, sounds and death burst) but are drawn as animated billboards instead of 3D entity models rendered through a private buffer.
+- Pumpkin spirits and poltergeists (Halloween, night only) keep the original's behaviour (spawn bursts, yellow-to-red pumpkin trails, death bursts and sounds), drawn as animated billboards. Poltergeists from undead deaths use the client's death event. Both stay dormant until their textures exist.
 - Particles left far behind the player (teleports, fast travel) are removed instead of ticking until they expire.
 
 ### Fixed
@@ -36,5 +36,4 @@ First version of Illuminations Reimagined, an unofficial continuation of Illumin
 - Glowworms allocating `new Random()` every tick, searching for ceilings only up to y=255, and never appearing in modern noise caves.
 - Plankton being pushed upward out of water.
 - Eyes in the dark appearing in large numbers in the Nether and End, and running game logic in render code.
-- Will o' wisps from Soul Sand Valley spawning inside soul sand blocks.
 - Chorus petals always blowing in the same direction, and the petal hook breaking.

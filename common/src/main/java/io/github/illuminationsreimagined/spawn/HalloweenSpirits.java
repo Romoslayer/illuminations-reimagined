@@ -47,7 +47,7 @@ public final class HalloweenSpirits {
 
     static void fromJackOLantern(ClientLevel level, BlockPos pos, RandomSource random, IlluminationsConfig config) {
         if (config.halloweenSpirits.fromJackOLanterns && random.nextInt(100) == 0 && active(level, config)
-                && ParticleTracker.hasRoom(ParticleKind.PUMPKIN_SPIRIT) && Sprites.isAvailable(Sprites.PUMPKIN_SPIRIT[0])) {
+                && ParticleTracker.hasRoom(ParticleKind.PUMPKIN_SPIRIT) && Sprites.isSkinAvailable(Sprites.PUMPKIN_SPIRIT_SKIN)) {
             ParticleTracker.spawn(new PumpkinSpiritParticle(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5));
         }
     }
@@ -72,7 +72,7 @@ public final class HalloweenSpirits {
     }
 
     private static boolean spawnPoltergeist(ClientLevel level, double x, double y, double z) {
-        if (!ParticleTracker.hasRoom(ParticleKind.POLTERGEIST) || !Sprites.isAvailable(Sprites.POLTERGEIST[0])) {
+        if (!ParticleTracker.hasRoom(ParticleKind.POLTERGEIST) || !Sprites.isSkinAvailable(Sprites.POLTERGEIST_SKIN)) {
             return false;
         }
         return ParticleTracker.spawn(new PoltergeistParticle(level, x, y, z));

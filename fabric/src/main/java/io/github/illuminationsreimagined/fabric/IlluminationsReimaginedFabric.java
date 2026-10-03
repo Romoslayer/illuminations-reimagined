@@ -21,11 +21,14 @@ package io.github.illuminationsreimagined.fabric;
 import io.github.illuminationsreimagined.IlluminationsReimagined;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.particle.v1.ParticleGroupRegistry;
+import io.github.illuminationsreimagined.particle.SpiritParticleGroup;
 
 public final class IlluminationsReimaginedFabric implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         IlluminationsReimagined.init();
         ClientTickEvents.END_CLIENT_TICK.register(IlluminationsReimagined::onClientTick);
+        ParticleGroupRegistry.register(SpiritParticleGroup.RENDER_TYPE, SpiritParticleGroup::new);
     }
 }

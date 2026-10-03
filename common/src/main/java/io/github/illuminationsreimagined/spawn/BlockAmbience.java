@@ -23,6 +23,7 @@ import io.github.illuminationsreimagined.particle.ChorusPetalParticle;
 import io.github.illuminationsreimagined.particle.ParticleKind;
 import io.github.illuminationsreimagined.particle.ParticleTracker;
 import io.github.illuminationsreimagined.particle.PrismarineCrystalParticle;
+import io.github.illuminationsreimagined.particle.Sprites;
 import io.github.illuminationsreimagined.particle.WillOWispParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -57,7 +58,8 @@ public final class BlockAmbience {
         } else if (state.is(Blocks.SEA_LANTERN)) {
             spawnPrismarineCrystals(level, pos, random, config);
         } else if (state.is(Blocks.SOUL_LANTERN)) {
-            if (config.willOWisps.fromSoulLanterns && random.nextInt(60) == 0 && ParticleTracker.hasRoom(ParticleKind.WILL_O_WISP)) {
+            if (config.willOWisps.fromSoulLanterns && random.nextInt(100) == 0 && ParticleTracker.hasRoom(ParticleKind.WILL_O_WISP)
+                    && Sprites.isSkinAvailable(Sprites.WISP_SKIN)) {
                 ParticleTracker.spawn(new WillOWispParticle(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5));
             }
         } else if (state.is(Blocks.JACK_O_LANTERN)) {

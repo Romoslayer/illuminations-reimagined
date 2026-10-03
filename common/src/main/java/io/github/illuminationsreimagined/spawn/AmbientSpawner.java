@@ -27,6 +27,7 @@ import io.github.illuminationsreimagined.particle.GlowwormParticle;
 import io.github.illuminationsreimagined.particle.ParticleKind;
 import io.github.illuminationsreimagined.particle.ParticleTracker;
 import io.github.illuminationsreimagined.particle.PlanktonParticle;
+import io.github.illuminationsreimagined.particle.Sprites;
 import io.github.illuminationsreimagined.particle.WillOWispParticle;
 import io.github.illuminationsreimagined.world.BiomeGroup;
 import io.github.illuminationsreimagined.world.WorldConditions;
@@ -60,7 +61,7 @@ public final class AmbientSpawner {
     private static final float GLOWWORM_CHANCE = 0.03F;
     private static final float PLANKTON_CHANCE = 0.05F;
     private static final float EYES_CHANCE = 0.002F;
-    private static final float WISP_CHANCE = 0.01F;
+    private static final float WISP_CHANCE = 0.004F;
     private static final double EYES_MIN_PLAYER_DISTANCE = 10.0;
 
     private static final RandomSource RANDOM = RandomSource.create();
@@ -155,7 +156,8 @@ public final class AmbientSpawner {
                 trySpawnEyes(level, player);
             }
         } else if (group == BiomeGroup.SOUL_SAND_VALLEY && state.is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
-            if (roll(WISP_CHANCE, config.willOWisps.soulSandValleyRate, density) && ParticleTracker.hasRoom(ParticleKind.WILL_O_WISP)) {
+            if (roll(WISP_CHANCE, config.willOWisps.soulSandValleyRate, density) && ParticleTracker.hasRoom(ParticleKind.WILL_O_WISP)
+                    && Sprites.isSkinAvailable(Sprites.WISP_SKIN)) {
                 trySpawnValleyWisp(level);
             }
         } else if (settings.plankton != SpawnRate.DISABLED && state.getFluidState().is(FluidTags.WATER)
@@ -234,22 +236,11 @@ public final class AmbientSpawner {
     }
 
     /**
-     * Valley wisps rise from soul sand and soul soil. The sample landed inside such a block; look a few blocks up for
-     * the open air above it. (The original spawned the wisp inside the block itself.)
+     * Valley wisps are born inside soul sand and soul soil and glide up out of it, giving off soul particles, as in
+     * the original mod.
      */
     private static void trySpawnValleyWisp(ClientLevel level) {
-        PROBE.set(POS);
-        for (int i = 0; i < 4; i++) {
-            PROBE.move(Direction.UP);
-            BlockState above = level.getBlockState(PROBE);
-            if (above.isAir()) {
-                ParticleTracker.spawn(new WillOWispParticle(level, PROBE.getX() + 0.5, PROBE.getY() + 0.6, PROBE.getZ() + 0.5));
-                return;
-            }
-            if (!above.is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
-                return;
-            }
-        }
+        ParticleTracker.spawn(new WillOWispParticle(level, POS.getX() + 0.5, POS.getY() + 0.5, POS.getZ() + 0.5));
     }
 
     private static boolean hasFloorWithin(ClientLevel level, int depth) {

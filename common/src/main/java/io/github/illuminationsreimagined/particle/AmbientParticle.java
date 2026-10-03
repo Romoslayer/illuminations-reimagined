@@ -97,6 +97,11 @@ public abstract class AmbientParticle extends SingleQuadParticle {
         return this.scratchPos.set(x, y, z);
     }
 
+    /** Current position (used by tests and debugging tools). */
+    public Vec3 currentPosition() {
+        return new Vec3(this.x, this.y, this.z);
+    }
+
     protected boolean isRemoved() {
         return this.removed;
     }

@@ -41,10 +41,11 @@ public final class Sprites {
     public static final Identifier[] EYES = {id("eyes_0"), id("eyes_1"), id("eyes_2"), id("eyes_3")};
     public static final Identifier[] CHORUS_PETAL = {id("chorus_petal_0"), id("chorus_petal_1"), id("chorus_petal_2")};
     public static final Identifier[] PRISMARINE_CRYSTAL = {id("prismarine_crystal_0"), id("prismarine_crystal_1"), id("prismarine_crystal_2")};
-    public static final Identifier[] WISP = {id("wisp_0"), id("wisp_1"), id("wisp_2"), id("wisp_3")};
     public static final Identifier WISP_EMBER = id("wisp_ember");
-    public static final Identifier[] PUMPKIN_SPIRIT = {id("pumpkin_spirit_0"), id("pumpkin_spirit_1"), id("pumpkin_spirit_2"), id("pumpkin_spirit_3")};
-    public static final Identifier[] POLTERGEIST = {id("poltergeist_0"), id("poltergeist_1"), id("poltergeist_2"), id("poltergeist_3")};
+    // 3D spirit skins (32x32, see SpiritModel). These are entity textures, not particle-atlas sprites.
+    public static final Identifier WISP_SKIN = id("textures/entity/will_o_wisp.png");
+    public static final Identifier PUMPKIN_SPIRIT_SKIN = id("textures/entity/pumpkin_spirit.png");
+    public static final Identifier POLTERGEIST_SKIN = id("textures/entity/poltergeist.png");
 
     private Sprites() {
     }
@@ -60,6 +61,14 @@ public final class Sprites {
     public static boolean isAvailable(Identifier id) {
         TextureAtlas atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.PARTICLES);
         return atlas.getSprite(id) != atlas.missingSprite();
+    }
+
+    /**
+     * Whether a spirit skin texture exists. Spirits whose skin has not been added yet stay dormant instead of
+     * rendering a missing texture.
+     */
+    public static boolean isSkinAvailable(Identifier texture) {
+        return Minecraft.getInstance().getResourceManager().getResource(texture).isPresent();
     }
 
     private static Identifier id(String path) {

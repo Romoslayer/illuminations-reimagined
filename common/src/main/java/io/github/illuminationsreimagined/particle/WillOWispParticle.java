@@ -19,20 +19,22 @@
 package io.github.illuminationsreimagined.particle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * A will o' wisp: a flickering soul-flame that wanders slowly and sheds faint embers.
- *
- * <p>The original rendered a textured 3D entity model from inside the particle renderer using its own immediate-mode
- * buffer (incompatible with batching and with Sodium/Iris). The wisp is now an animated billboard plus trailing
- * ember particles, rendered entirely through the vanilla particle pipeline.</p>
+ * A will o' wisp: a soul-flame that darts between random points, leaving a ribbon of sparks that start white and
+ * turn cyan. It rises out of soul sand and soul soil and can glide through them, giving off soul particles while
+ * inside. Rendered as a small 3D head ({@link SpiritModel}).
  */
 public class WillOWispParticle extends WanderingSpiritParticle {
+    private static final float[] TRAIL_COLOR = {1.0F, 1.0F, 1.0F};
+    private static final float[] TRAIL_STEP = {-0.1F, -0.01F, 0.0F};
+
     public WillOWispParticle(ClientLevel level, double x, double y, double z) {
-        super(level, x, y, z, Sprites.WISP, 3, 0.95F);
-        this.quadSize = 0.22F + this.random.nextFloat() * 0.08F;
-        this.lifetime = 300 + this.random.nextInt(400);
-        this.setColor(0.55F, 0.95F, 1.0F);
+        super(level, x, y, z, Sprites.WISP_SKIN, TRAIL_COLOR, TRAIL_STEP);
     }
 
     @Override
@@ -41,12 +43,42 @@ public class WillOWispParticle extends WanderingSpiritParticle {
     }
 
     @Override
-    protected void tickAppearance() {
-        float flicker = 0.85F + this.random.nextFloat() * 0.15F;
-        this.rCol = 0.5F * flicker;
-        this.gCol = 0.95F * flicker;
-        if (!this.fadingOut && this.age % 3 == 0) {
-            this.shedEmber(this.rCol, this.gCol, this.bCol);
-        }
+    protected int retargetInterval() {
+        return 20;
+    }
+
+    @Override
+    protected boolean passesThroughSoulBlocks() {
+        return true;
+    }
+
+    @Override
+    protected BlockState deathBlock() {
+        return Blocks.SOUL_SAND.defaultBlockState();
+    }
+
+    @Override
+    protected SoundEvent ambientSound() {
+        return SoundEvents.SOUL_ESCAPE.value();
+    }
+
+    @Override
+    protected float ambientPitch() {
+        return 1.5F;
+    }
+
+    @Override
+    protected int ambientSoundChance() {
+        return 20;
+    }
+
+    @Override
+    protected SoundEvent[] deathSounds() {
+        return new SoundEvent[]{SoundEvents.SOUL_ESCAPE.value(), SoundEvents.SOUL_SAND_BREAK};
+    }
+
+    @Override
+    protected float[] deathPitches() {
+        return new float[]{1.5F, 1.0F};
     }
 }

@@ -29,7 +29,7 @@ public enum ParticleKind {
     PLANKTON(c -> c.plankton.maxCount),
     EYES(c -> c.eyesInTheDark.maxCount),
     WILL_O_WISP(c -> c.willOWisps.maxCount),
-    WISP_EMBER(c -> c.willOWisps.maxCount * 24),
+    WISP_EMBER(c -> (c.willOWisps.maxCount + c.halloweenSpirits.maxCount) * 300),
     CHORUS_PETAL(c -> c.chorusPetals.maxCount),
     PRISMARINE_CRYSTAL(c -> c.prismarineCrystals.maxCount),
     PUMPKIN_SPIRIT(c -> c.halloweenSpirits.maxCount),
