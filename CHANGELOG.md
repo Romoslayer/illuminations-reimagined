@@ -11,7 +11,7 @@ First version of Illuminations Reimagined, an unofficial continuation of Illumin
 - Self-updater, bundled `illuminations-uninstaller.jar`, and the update, donation and greeting screens and toasts.
 - Override of Minecraft's `particle.fsh` shader; Canvas material maps; built-in "lowerres"/"pixelaccurate" packs.
 - Unused embers effect; unreferenced `lib/javax.*.jar` binaries.
-- All original artwork (All Rights Reserved), replaced by new generated textures.
+- All original artwork (All Rights Reserved), replaced by new original textures and a new icon.
 
 ### Changed
 - Ported to Minecraft 26.2 and 26.3 (unobfuscated, Mojang names) with a shared codebase for Fabric and NeoForge.
