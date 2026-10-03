@@ -20,6 +20,7 @@ package io.github.illuminationsreimagined.particle;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
@@ -89,6 +90,16 @@ public abstract class AmbientParticle extends SingleQuadParticle {
 
     /** Per-tick behaviour. Previous-position bookkeeping has already been done. */
     protected abstract void tickAmbient();
+
+    /** Light-giving particles are drawn by {@link GlowParticleGroup}, so shader packs make them glow. */
+    protected boolean glows() {
+        return false;
+    }
+
+    @Override
+    public ParticleRenderType getGroup() {
+        return this.glows() ? GlowParticleGroup.RENDER_TYPE : super.getGroup();
+    }
 
     /**
      * {@link #move} without vanilla's collision latch. Vanilla stops a particle for good the first time a vertical

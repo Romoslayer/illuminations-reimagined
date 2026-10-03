@@ -99,6 +99,11 @@ public class FireflyParticle extends AmbientParticle {
     }
 
     @Override
+    protected boolean glows() {
+        return true;
+    }
+
+    @Override
     protected void tickAmbient() {
         IlluminationsConfig.Fireflies cfg = IlluminationsConfig.get().fireflies;
         boolean daylight = !cfg.spawnAlways && !this.level.dimensionType().hasFixedTime() && !WorldConditions.isNight(this.level);

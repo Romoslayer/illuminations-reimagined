@@ -51,6 +51,11 @@ public class GlowwormParticle extends AmbientParticle {
     }
 
     @Override
+    protected boolean glows() {
+        return true;
+    }
+
+    @Override
     protected void tickAmbient() {
         boolean fadingOut = this.age++ >= this.lifetime;
         if (fadingOut && this.glow < 0.0F) {

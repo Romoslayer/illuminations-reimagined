@@ -128,7 +128,7 @@ public abstract class WanderingSpiritParticle extends AmbientParticle {
     }
 
     /** Drawn with the glowing (emissive) render type; the original drew poltergeists plain. */
-    boolean glows() {
+    boolean glowingModel() {
         return true;
     }
 

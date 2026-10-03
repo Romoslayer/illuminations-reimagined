@@ -51,6 +51,11 @@ public class WispEmberParticle extends AmbientParticle {
     }
 
     @Override
+    protected boolean glows() {
+        return true;
+    }
+
+    @Override
     protected void tickAmbient() {
         if (this.age++ >= this.lifetime) {
             this.alpha -= 0.05F;

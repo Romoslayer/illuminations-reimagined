@@ -57,6 +57,11 @@ public class EyesParticle extends AmbientParticle {
     }
 
     @Override
+    protected boolean glows() {
+        return true;
+    }
+
+    @Override
     protected void tickAmbient() {
         if (this.shouldDisappear()) {
             this.remove();

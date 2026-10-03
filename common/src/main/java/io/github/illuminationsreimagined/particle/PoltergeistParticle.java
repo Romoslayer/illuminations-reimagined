@@ -53,7 +53,7 @@ public class PoltergeistParticle extends WanderingSpiritParticle {
     }
 
     @Override
-    boolean glows() {
+    boolean glowingModel() {
         return false;
     }
 

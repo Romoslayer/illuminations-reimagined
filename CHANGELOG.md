@@ -23,6 +23,7 @@ First version of Illuminations Reimagined, an unofficial continuation of Illumin
 - Every effect keeps the original's behaviour: where and how often it spawns, its size, colours, blinking, movement and lifetime, the default per-biome settings and the night window. Will o' wisps, pumpkin spirits and poltergeists are 3D heads that face their direction of travel, as in the original. Poltergeists from undead deaths use the client's death event.
 - New options, with defaults that match the original: autumn firefly colours (off), light attraction for fireflies, separate switches for each spirit source, petal bursts and prismarine crystals, separate seasonal settings for the eyes and the spirits, a count cap per effect, and a switch per dimension (all on; modded dimensions are listed while you are in them). Spirits stay dormant until their textures exist.
 - Particles left far behind the player (teleports, fast travel) are removed instead of ticking until they expire.
+- With shader packs, the light effects (fireflies, glowworms, plankton, eyes, prismarine crystals and spirit trail sparks) are drawn like other glowing things, so packs such as Complementary give them bloom. Without shaders they look exactly as before.
 
 ### Fixed
 - Fireflies never dying: when they faded out, the blink picked a new brightness, so they lived forever.

@@ -58,6 +58,11 @@ public class PrismarineCrystalParticle extends AmbientParticle {
     }
 
     @Override
+    protected boolean glows() {
+        return true;
+    }
+
+    @Override
     protected void tickAmbient() {
         if (this.age++ < this.lifetime) {
             this.alpha = Math.min(1.0F, this.alpha + 0.01F);

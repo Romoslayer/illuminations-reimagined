@@ -70,7 +70,7 @@ public class SpiritParticleGroup extends ParticleGroup<WanderingSpiritParticle> 
             poseStack.scale(-0.5F, -0.5F, 0.5F);
             poseStack.translate(0.0F, -1.0F, 0.0F);
             int color = ARGB.colorFromFloat(particle.renderAlpha(), 1.0F, 1.0F, 1.0F);
-            RenderType renderType = particle.glows() ? RenderTypes.entityTranslucentEmissive(particle.skin()) : RenderTypes.entityTranslucent(particle.skin());
+            RenderType renderType = particle.glowingModel() ? RenderTypes.entityTranslucentEmissive(particle.skin()) : RenderTypes.entityTranslucent(particle.skin());
             entries.add(new Entry(poseStack, renderType, color));
         }
         return new State(entries);

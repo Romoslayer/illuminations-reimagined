@@ -28,6 +28,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleGroupsEvent;
+import io.github.illuminationsreimagined.particle.GlowParticleGroup;
 import io.github.illuminationsreimagined.particle.SpiritParticleGroup;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -37,6 +38,9 @@ public final class IlluminationsReimaginedNeoForge {
         IlluminationsReimagined.init();
         container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> new IlluminationsConfigScreen(parent));
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> IlluminationsReimagined.onClientTick(Minecraft.getInstance()));
-        modBus.addListener((RegisterParticleGroupsEvent event) -> event.register(SpiritParticleGroup.RENDER_TYPE, SpiritParticleGroup::new));
+        modBus.addListener((RegisterParticleGroupsEvent event) -> {
+            event.register(SpiritParticleGroup.RENDER_TYPE, SpiritParticleGroup::new);
+            event.register(GlowParticleGroup.RENDER_TYPE, GlowParticleGroup::new);
+        });
     }
 }
