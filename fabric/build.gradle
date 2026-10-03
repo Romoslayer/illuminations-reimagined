@@ -9,6 +9,10 @@ repositories {
         url = uri('https://maven.terraformersmc.com/releases/')
         content { includeGroup 'com.terraformersmc' }
     }
+    exclusiveContent {
+        forRepository { maven { name = 'Modrinth'; url = uri('https://api.modrinth.com/maven') } }
+        filter { includeGroup 'maven.modrinth' }
+    }
 }
 
 dependencies {
@@ -17,6 +21,15 @@ dependencies {
     implementation("net.fabricmc.fabric-api:fabric-api:${fabric_version}")
     // Optional integration: shows the config button in Mod Menu. Not bundled; works without Mod Menu installed.
     compileOnly("com.terraformersmc:modmenu:${modmenu_version}") { transitive = false }
+
+    // Compatibility testing only (never published): -Pcompat=sodium or -Pcompat=iris adds them to dev runs and game tests.
+    def compat = providers.gradleProperty('compat').getOrElse('')
+    if (compat == 'sodium' || compat == 'iris') {
+        localRuntime("maven.modrinth:sodium:${sodium_version}")
+    }
+    if (compat == 'iris') {
+        localRuntime("maven.modrinth:iris:${iris_version}")
+    }
 }
 
 loom {
