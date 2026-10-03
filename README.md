@@ -76,7 +76,8 @@ donation, update and greeting screens, and the override of Minecraft's own parti
 Jars are written to `fabric/build/libs/` and `neoforge/build/libs/`. Version-specific dependency versions live
 in `versions/<mc>.properties`.
 
-Textures are generated, not hand-edited: `java tools/assetgen/GenerateAssets.java`.
+Particle textures are PNGs with transparency. Runtime-tinted textures use white and grey only;
+animation frames and variants are separate numbered files. See [`docs/ASSETS.md`](docs/ASSETS.md).
 
 ## Licensing
 
