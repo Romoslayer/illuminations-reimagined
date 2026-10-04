@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 — unreleased
+
+No player-facing changes yet.
+
 ## 0.1.1 — 2026-10-04 (Minecraft 26.2 / 26.3, Fabric + NeoForge)
 
 ### Fixed
