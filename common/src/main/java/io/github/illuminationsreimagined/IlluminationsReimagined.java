@@ -20,11 +20,15 @@ package io.github.illuminationsreimagined;
 
 import io.github.illuminationsreimagined.config.IlluminationsConfig;
 import io.github.illuminationsreimagined.spawn.AmbientSpawner;
+import io.github.illuminationsreimagined.world.WorldConditions;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Loader-independent entry point. The loader modules call {@link #init()} once and {@link #onClientTick} every tick. */
+/**
+ * Loader-independent entry point. The loader modules call {@link #init()} once, {@link #onClientTick} every tick and
+ * {@link #onClientTagsUpdated} whenever the client receives tags.
+ */
 public final class IlluminationsReimagined {
     public static final String MOD_ID = "illuminations_reimagined";
     public static final Logger LOGGER = LoggerFactory.getLogger("Illuminations Reimagined");
@@ -38,5 +42,10 @@ public final class IlluminationsReimagined {
 
     public static void onClientTick(Minecraft minecraft) {
         AmbientSpawner.tick(minecraft);
+    }
+
+    /** The client applied tags sent by the server (joining, or a datapack reload). Called on the client thread. */
+    public static void onClientTagsUpdated() {
+        WorldConditions.onTagsUpdated();
     }
 }

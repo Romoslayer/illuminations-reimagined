@@ -84,6 +84,7 @@ fabricApi {
 tasks.matching { it.name == 'runClientGameTest' }.configureEach {
     if (project.hasProperty('survey')) {
         systemProperty('illuminations_reimagined.survey', 'true')
+        systemProperty('illuminations_reimagined.profileSpawner', 'true') // the survey logs the spawner's cost
         if (project.hasProperty('surveyStops')) {
             systemProperty('illuminations_reimagined.surveyStops', project.property('surveyStops').toString())
         }

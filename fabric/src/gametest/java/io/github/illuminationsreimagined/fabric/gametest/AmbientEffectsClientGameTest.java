@@ -28,6 +28,7 @@ import io.github.illuminationsreimagined.config.SpawnRate;
 import io.github.illuminationsreimagined.particle.AmbientParticle;
 import io.github.illuminationsreimagined.particle.EyesParticle;
 import io.github.illuminationsreimagined.particle.FireflyParticle;
+import io.github.illuminationsreimagined.particle.GlowwormParticle;
 import io.github.illuminationsreimagined.particle.ParticleKind;
 import io.github.illuminationsreimagined.particle.ParticleTracker;
 import io.github.illuminationsreimagined.particle.PoltergeistParticle;
@@ -35,16 +36,23 @@ import io.github.illuminationsreimagined.particle.PumpkinSpiritParticle;
 import io.github.illuminationsreimagined.particle.Sprites;
 import io.github.illuminationsreimagined.particle.WillOWispParticle;
 import io.github.illuminationsreimagined.world.BiomeGroup;
+import io.github.illuminationsreimagined.world.WorldConditions;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.phys.Vec3;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -239,25 +247,18 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             IlluminationsReimagined.LOGGER.info("[gametest] fireflies 200 ticks after noon: {}", firefliesByDay);
             require(firefliesByDay == 0, "fireflies disappear during the day");
 
-            // Switching the Overworld off stops new effects there (petals, crystals and lantern wisps spawn by day too),
-            // and switching it back on brings them back.
-            Identifier overworld = Level.OVERWORLD.identifier();
-            // The earlier break test removed the chorus flower; put it back as a steady source.
+            // The earlier break test removed the chorus flower; put it back as a steady source (petals, crystals and lantern
+            // wisps spawn by day too).
             world.getServer().runCommand(String.format("setblock %d %d %d chorus_flower", x - 6, y, z + 4));
-            context.runOnClient(c -> {
-                IlluminationsConfig.get().setDimensionEnabled(overworld, false);
-                ParticleTracker.clear();
-            });
-            context.waitTicks(200);
-            int whileOff = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.CHORUS_PETAL)
-                    + ParticleTracker.count(ParticleKind.PRISMARINE_CRYSTAL) + ParticleTracker.count(ParticleKind.WILL_O_WISP));
-            context.runOnClient(c -> IlluminationsConfig.get().setDimensionEnabled(overworld, true));
-            context.waitTicks(200);
-            int whileOn = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.CHORUS_PETAL)
-                    + ParticleTracker.count(ParticleKind.PRISMARINE_CRYSTAL) + ParticleTracker.count(ParticleKind.WILL_O_WISP));
-            IlluminationsReimagined.LOGGER.info("[gametest] block effects with the Overworld off / on: {} / {}", whileOff, whileOn);
-            require(whileOff == 0, "no effects appear in a dimension that is switched off");
-            require(whileOn > 0, "effects return when the dimension is switched back on");
+            Identifier overworld = Level.OVERWORLD.identifier();
+            testSwitchOff(context, x, y, z, "the master switch", false,
+                    () -> IlluminationsConfig.get().enabled = false, () -> IlluminationsConfig.get().enabled = true);
+            testSwitchOff(context, x, y, z, "the Overworld's switch", false,
+                    () -> IlluminationsConfig.get().setDimensionEnabled(overworld, false), () -> IlluminationsConfig.get().setDimensionEnabled(overworld, true));
+            testSwitchOff(context, x, y, z, "the master switch while paused", true,
+                    () -> IlluminationsConfig.get().enabled = false, () -> IlluminationsConfig.get().enabled = true);
+
+            testTagReload(context, world, p);
         }
 
         // After leaving the world, the tracker must not keep stale particles.
@@ -267,8 +268,120 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
         require(after.values().stream().allMatch(c -> c == 0), "tracker is empty after leaving the world");
     }
 
+    /**
+     * Switching effects off removes the ones already alive on the next simulated tick, quietly (spirits leave no burst and
+     * shed no more sparks), nothing new appears while off, and effects come back once switched on again. While paused
+     * nothing ticks, so the particles are only removed once the game resumes.
+     */
+    private static void testSwitchOff(ClientGameTestContext context, int x, int y, int z, String name, boolean paused,
+                                      Runnable off, Runnable on) {
+        List<AmbientParticle> live = context.computeOnClient(c -> {
+            List<AmbientParticle> spawned = new ArrayList<>();
+            for (AmbientParticle particle : new AmbientParticle[]{
+                    new WillOWispParticle(c.level, x + 2.5, y + 3, z + 0.5),
+                    new PumpkinSpiritParticle(c.level, x + 2.5, y + 3, z - 1.5),
+                    new PoltergeistParticle(c.level, x + 2.5, y + 3, z + 2.5),
+                    // Under the dark room's ceiling, and in its pitch-dark interior.
+                    new GlowwormParticle(c.level, x + 20.5, y + 7.975, z + 0.5),
+                    new EyesParticle(c.level, x + 17.5, y + 2.5, z + 0.5),
+                    FireflyParticle.create(c.level, x + 1.5, y + 2, z - 2.5, 0x9AFF3C)}) {
+                if (ParticleTracker.spawn(particle)) {
+                    spawned.add(particle);
+                }
+            }
+            return spawned;
+        });
+        context.waitTicks(5);
+        if (paused) {
+            context.runOnClient(c -> c.pauseGame(false));
+            context.waitFor(c -> c.isPaused());
+        }
+        List<AmbientParticle> alive = context.computeOnClient(c -> live.stream().filter(AmbientParticle::isAlive).toList());
+        int sparks = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.WISP_EMBER));
+        IlluminationsReimagined.LOGGER.info("[gametest] {}: {} of {} placed effects alive, {} trail sparks, before switching off",
+                name, alive.size(), live.size(), sparks);
+        require(alive.stream().filter(p -> p instanceof WillOWispParticle || p instanceof PumpkinSpiritParticle
+                || p instanceof PoltergeistParticle).count() == 3 && sparks > 0, "spirits and their trails are alive before " + name + " goes off");
+
+        context.runOnClient(c -> off.run());
+        if (paused) {
+            context.waitTicks(20);
+            boolean kept = context.computeOnClient(c -> alive.stream().allMatch(AmbientParticle::isAlive));
+            require(kept, "nothing ticks while paused, so effects wait for the game to resume");
+            context.runOnClient(c -> c.gui.setScreen(null));
+            // Vanilla updates the pause state after a frame's ticks, so this is still one tick before the game runs again.
+            context.waitFor(c -> !c.isPaused());
+        }
+        context.waitTick();
+        // Right after the first tick that ran with the switch off.
+        long stillAlive = context.computeOnClient(c -> alive.stream().filter(AmbientParticle::isAlive).count());
+        int total = context.computeOnClient(c -> totalCount());
+        IlluminationsReimagined.LOGGER.info("[gametest] {} off: {} placed effects still alive, {} tracked", name, stillAlive, total);
+        require(stillAlive == 0 && total == 0, name + " removes every live effect on the next tick");
+        context.waitTicks(100);
+        int whileOff = context.computeOnClient(c -> totalCount());
+        require(whileOff == 0, "no effects or trail sparks appear while " + name + " is off (" + whileOff + ")");
+
+        context.runOnClient(c -> on.run());
+        context.waitTicks(200);
+        int whileOn = context.computeOnClient(c -> ParticleTracker.count(ParticleKind.CHORUS_PETAL)
+                + ParticleTracker.count(ParticleKind.PRISMARINE_CRYSTAL) + ParticleTracker.count(ParticleKind.WILL_O_WISP));
+        IlluminationsReimagined.LOGGER.info("[gametest] block effects after {} is back on: {}", name, whileOn);
+        require(whileOn > 0, "effects return when " + name + " is switched back on");
+    }
+
+    /**
+     * A datapack {@code /reload} can change biome tags without changing the level; the biome-group cache must follow.
+     * Tagging plains as {@code c:is_swamp} turns the flat world into a swamp for the mod, and removing the pack undoes it.
+     */
+    private static void testTagReload(ClientGameTestContext context, TestSingleplayerContext world, BlockPos pos) {
+        BiomeGroup before = context.computeOnClient(c -> WorldConditions.biomeGroup(c.level, pos));
+        require(before == BiomeGroup.PLAINS, "the test world is plains before the reload (" + before + ")");
+        Path pack = world.getServer().computeOnServer(s -> s.getWorldPath(LevelResource.DATAPACK_DIR)).resolve("illuminations_tag_test");
+        try {
+            Files.createDirectories(pack.resolve("data/c/tags/worldgen/biome"));
+            int format = SharedConstants.DATA_PACK_FORMAT_MAJOR;
+            Files.writeString(pack.resolve("pack.mcmeta"),
+                    "{\"pack\": {\"description\": \"Illuminations tag test\", \"min_format\": " + format + ", \"max_format\": " + format + "}}");
+            Files.writeString(pack.resolve("data/c/tags/worldgen/biome/is_swamp.json"), "{\"values\": [\"minecraft:plains\"]}");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        world.getServer().runCommand("reload");
+        context.waitTicks(40);
+        BiomeGroup tagged = context.computeOnClient(c -> WorldConditions.biomeGroup(c.level, pos));
+        IlluminationsReimagined.LOGGER.info("[gametest] biome group after tagging plains as a swamp: {}", tagged);
+        require(tagged == BiomeGroup.SWAMP, "a datapack reload that changes biome tags reclassifies the biome without reconnecting");
+
+        try (var files = Files.walk(pack)) {
+            files.sorted(java.util.Comparator.reverseOrder()).forEach(path -> path.toFile().delete());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        world.getServer().runCommand("reload");
+        context.waitTicks(40);
+        BiomeGroup after = context.computeOnClient(c -> WorldConditions.biomeGroup(c.level, pos));
+        require(after == BiomeGroup.PLAINS, "removing the pack and reloading restores the biome group (" + after + ")");
+    }
+
+    private static int totalCount() {
+        int total = 0;
+        for (ParticleKind kind : ParticleKind.values()) {
+            total += ParticleTracker.count(kind);
+        }
+        return total;
+    }
+
     /** Opens the settings screens, navigates to the biome screen and back, and checks that closing saves the file. */
     private static void testConfigScreens(ClientGameTestContext context) {
+        // The highest caps the file accepts must survive opening and closing the screen (its sliders once stopped at 50).
+        context.runOnClient(client -> {
+            IlluminationsConfig config = IlluminationsConfig.get();
+            config.eyesInTheDark.maxCount = IlluminationsConfig.MAX_EYES;
+            config.willOWisps.maxCount = IlluminationsConfig.MAX_WISPS;
+            config.halloweenSpirits.maxCount = IlluminationsConfig.MAX_HALLOWEEN_SPIRITS;
+            config.chorusPetals.maxCount = IlluminationsConfig.MAX_CHORUS_PETALS;
+        });
         context.setScreen(() -> new IlluminationsConfigScreen(null));
         context.waitForScreen(IlluminationsConfigScreen.class);
         context.takeScreenshot("illuminations_config_screen");
@@ -294,6 +407,26 @@ public class AmbientEffectsClientGameTest implements FabricClientGameTest {
             }
         });
         require(saved, "closing the config screen saves the config file");
+        IlluminationsConfig written = context.computeOnClient(client -> {
+            try {
+                return new com.google.gson.Gson().fromJson(java.nio.file.Files.readString(IlluminationsConfig.path()), IlluminationsConfig.class);
+            } catch (java.io.IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        });
+        require(written.eyesInTheDark.maxCount == IlluminationsConfig.MAX_EYES && written.willOWisps.maxCount == IlluminationsConfig.MAX_WISPS
+                        && written.halloweenSpirits.maxCount == IlluminationsConfig.MAX_HALLOWEEN_SPIRITS
+                        && written.chorusPetals.maxCount == IlluminationsConfig.MAX_CHORUS_PETALS,
+                "opening and closing the screen keeps the highest accepted caps");
+        // Back to the default caps for the rest of the test.
+        context.runOnClient(client -> {
+            IlluminationsConfig defaults = new IlluminationsConfig();
+            IlluminationsConfig config = IlluminationsConfig.get();
+            config.eyesInTheDark.maxCount = defaults.eyesInTheDark.maxCount;
+            config.willOWisps.maxCount = defaults.willOWisps.maxCount;
+            config.halloweenSpirits.maxCount = defaults.halloweenSpirits.maxCount;
+            config.chorusPetals.maxCount = defaults.chorusPetals.maxCount;
+        });
     }
 
     private static void fill(TestSingleplayerContext world, int x1, int y1, int z1, int x2, int y2, int z2, String block) {

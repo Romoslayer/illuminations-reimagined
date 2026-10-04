@@ -73,6 +73,11 @@ public abstract class AmbientParticle extends SingleQuadParticle {
         this.yo = this.y;
         this.zo = this.z;
         this.oRoll = this.roll;
+        if (!ParticleTracker.effectsEnabled(this.level)) {
+            // Effects were switched off (globally or for this dimension): vanish quietly, without trails, bursts or sounds.
+            this.remove();
+            return;
+        }
         if (this.age % 20 == 0 && this.isFarFromCamera()) {
             // The player moved away (teleport, fast travel): drop it instead of ticking it and counting it against the cap.
             this.remove();

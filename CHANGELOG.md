@@ -2,7 +2,23 @@
 
 ## 0.1.1 — unreleased
 
-No player-facing changes yet.
+### Fixed
+- Meadows used the Mountains and Hills settings (vanilla also tags them as mountains); they now follow Plains and
+  Meadows, as the settings screen says.
+- Turning effects off, or switching off the current dimension, now removes the effects already showing at once.
+  Before, they lived out their lifespan, and spirits kept shedding sparks and making sounds.
+- Biome settings now follow biome tag changes from a server datapack reload, instead of waiting for a world or
+  dimension change.
+- An effect set to Off (or 0% density) could still spawn on a one-in-16-million random roll.
+- The settings screen showed (and, when touched, lowered) caps above 50 for eyes, wisps and Halloween spirits,
+  although the config file accepts up to 200.
+- A config file written by a newer version of the mod is no longer rewritten (dropping the settings this version
+  doesn't know); it is used as far as this version understands it and left unchanged.
+
+### Changed
+- The Halloween spirit cap is labelled "Max of Each Spirit": it always applied to pumpkin spirits and poltergeists
+  separately. The trail-spark cap now leaves room for both.
+- The chorus petal cap is in the settings screen (it was only in the config file).
 
 ## 0.1.0 — 2026-10-03 (Minecraft 26.2 / 26.3, Fabric + NeoForge)
 

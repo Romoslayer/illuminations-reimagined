@@ -54,6 +54,17 @@ import java.util.Set;
 public final class IlluminationsConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final int CURRENT_VERSION = 1;
+    // Highest accepted values. The settings screen uses the same limits, so it shows every value the file may hold.
+    public static final int MAX_DENSITY = 1000;
+    public static final int MAX_FIREFLIES = 2000;
+    public static final int MAX_GLOWWORMS = 2000;
+    public static final int MAX_PLANKTON = 2000;
+    public static final int MAX_EYES = 200;
+    public static final int MAX_WISPS = 200;
+    public static final int MAX_CHORUS_PETALS = 4000;
+    public static final int MAX_PRISMARINE_CRYSTALS = 2000;
+    /** Applies to pumpkin spirits and poltergeists separately. */
+    public static final int MAX_HALLOWEEN_SPIRITS = 200;
     private static IlluminationsConfig instance = new IlluminationsConfig();
 
     public int configVersion = CURRENT_VERSION;
@@ -81,6 +92,11 @@ public final class IlluminationsConfig {
      */
     public List<String> disabledDimensions = new ArrayList<>();
     private transient Set<Identifier> disabledDimensionIds = Set.of();
+    /**
+     * Never overwrite the file: it was written by a newer version of the mod (its settings are used as far as this version
+     * understands them, but rewriting it would drop the rest), or it could not be read nor backed up.
+     */
+    private transient boolean keepFile;
 
     public static final class Fireflies {
         public int maxCount = 160;
@@ -142,6 +158,7 @@ public final class IlluminationsConfig {
         public boolean fromSkulls = true;
         /** Poltergeists sometimes escape from undead that die at night. */
         public boolean fromUndeadDeaths = true;
+        /** Cap for each spirit type: up to this many pumpkin spirits and, separately, this many poltergeists. */
         public int maxCount = 16;
     }
 
@@ -217,14 +234,24 @@ public final class IlluminationsConfig {
 
     /** Replaces the current settings with defaults (used by the config screen's reset button). */
     public static void resetToDefaults() {
+        resetToDefaults(path());
+    }
+
+    static void resetToDefaults(Path path) {
+        boolean keepFile = instance.keepFile;
         instance = new IlluminationsConfig();
+        instance.keepFile = keepFile;
         instance.sanitize();
-        instance.save();
+        instance.save(path);
     }
 
     public static void load() {
-        Path path = path();
+        load(path());
+    }
+
+    static void load(Path path) {
         IlluminationsConfig loaded = null;
+        boolean keepFile = false;
         if (Files.exists(path)) {
             try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
                 loaded = GSON.fromJson(reader, IlluminationsConfig.class);
@@ -233,20 +260,33 @@ public final class IlluminationsConfig {
                 try {
                     Files.copy(path, path.resolveSibling(path.getFileName() + ".broken"), StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException copyError) {
-                    IlluminationsReimagined.LOGGER.warn("Could not back up broken config", copyError);
+                    IlluminationsReimagined.LOGGER.warn("Could not back up broken config; leaving it untouched", copyError);
+                    keepFile = true;
                 }
             }
         }
+        if (loaded != null && loaded.configVersion > CURRENT_VERSION) {
+            IlluminationsReimagined.LOGGER.warn("{} is from a newer version of the mod (config version {}, this version reads {}); "
+                    + "using the settings it understands and leaving the file unchanged", path, loaded.configVersion, CURRENT_VERSION);
+            keepFile = true;
+        }
         instance = loaded != null ? loaded : new IlluminationsConfig();
+        instance.keepFile = keepFile;
         instance.sanitize();
-        instance.save();
+        instance.save(path);
     }
 
     public void save() {
-        Path path = path();
+        this.save(path());
+    }
+
+    void save(Path path) {
+        if (this.keepFile) {
+            return;
+        }
+        Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
         try {
             Files.createDirectories(path.getParent());
-            Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
             try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
                 GSON.toJson(this, writer);
             }
@@ -256,14 +296,20 @@ public final class IlluminationsConfig {
                 Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
+            // The existing file is only ever replaced by a complete temporary file, so it is still intact.
             IlluminationsReimagined.LOGGER.error("Could not save {}", path, e);
+            try {
+                Files.deleteIfExists(tmp);
+            } catch (IOException ignored) {
+                // Best effort; the next save overwrites it.
+            }
         }
     }
 
     /** Clamps every value into its valid range and fills anything missing with defaults. */
     public void sanitize() {
         this.configVersion = CURRENT_VERSION;
-        this.density = Mth.clamp(this.density, 0, 1000);
+        this.density = Mth.clamp(this.density, 0, MAX_DENSITY);
 
         if (this.fireflies == null) this.fireflies = new Fireflies();
         if (this.glowworms == null) this.glowworms = new Glowworms();
@@ -274,21 +320,21 @@ public final class IlluminationsConfig {
         if (this.prismarineCrystals == null) this.prismarineCrystals = new PrismarineCrystals();
         if (this.halloweenSpirits == null) this.halloweenSpirits = new HalloweenSpirits();
 
-        this.fireflies.maxCount = Mth.clamp(this.fireflies.maxCount, 0, 2000);
+        this.fireflies.maxCount = Mth.clamp(this.fireflies.maxCount, 0, MAX_FIREFLIES);
         this.fireflies.coreBrightness = Mth.clamp(this.fireflies.coreBrightness, 0, 100);
         if (this.fireflies.autumnColors == null) this.fireflies.autumnColors = SeasonalMode.DISABLED;
-        this.glowworms.maxCount = Mth.clamp(this.glowworms.maxCount, 0, 2000);
-        this.plankton.maxCount = Mth.clamp(this.plankton.maxCount, 0, 2000);
+        this.glowworms.maxCount = Mth.clamp(this.glowworms.maxCount, 0, MAX_GLOWWORMS);
+        this.plankton.maxCount = Mth.clamp(this.plankton.maxCount, 0, MAX_PLANKTON);
         if (this.eyesInTheDark.mode == null) this.eyesInTheDark.mode = SeasonalMode.SEASONAL;
         if (this.eyesInTheDark.rate == null) this.eyesInTheDark.rate = SpawnRate.MEDIUM;
-        this.eyesInTheDark.maxCount = Mth.clamp(this.eyesInTheDark.maxCount, 0, 200);
+        this.eyesInTheDark.maxCount = Mth.clamp(this.eyesInTheDark.maxCount, 0, MAX_EYES);
         if (this.willOWisps.soulSandValleyRate == null) this.willOWisps.soulSandValleyRate = SpawnRate.MEDIUM;
-        this.willOWisps.maxCount = Mth.clamp(this.willOWisps.maxCount, 0, 200);
+        this.willOWisps.maxCount = Mth.clamp(this.willOWisps.maxCount, 0, MAX_WISPS);
         this.chorusPetals.multiplier = Mth.clamp(this.chorusPetals.multiplier, 0, 10);
-        this.chorusPetals.maxCount = Mth.clamp(this.chorusPetals.maxCount, 0, 4000);
-        this.prismarineCrystals.maxCount = Mth.clamp(this.prismarineCrystals.maxCount, 0, 2000);
+        this.chorusPetals.maxCount = Mth.clamp(this.chorusPetals.maxCount, 0, MAX_CHORUS_PETALS);
+        this.prismarineCrystals.maxCount = Mth.clamp(this.prismarineCrystals.maxCount, 0, MAX_PRISMARINE_CRYSTALS);
         if (this.halloweenSpirits.mode == null) this.halloweenSpirits.mode = SeasonalMode.SEASONAL;
-        this.halloweenSpirits.maxCount = Mth.clamp(this.halloweenSpirits.maxCount, 0, 200);
+        this.halloweenSpirits.maxCount = Mth.clamp(this.halloweenSpirits.maxCount, 0, MAX_HALLOWEEN_SPIRITS);
 
         Map<String, BiomeGroupSettings> groups = new LinkedHashMap<>();
         for (BiomeGroup group : BiomeGroup.values()) {

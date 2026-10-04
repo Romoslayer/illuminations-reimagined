@@ -66,7 +66,7 @@ public class FireflyShotClientGameTest implements FabricClientGameTest {
         context.runOnClient(client -> {
             IlluminationsConfig.resetToDefaults();
             IlluminationsConfig config = IlluminationsConfig.get();
-            config.enabled = false; // only the fireflies placed below
+            HandPlacedOnly.apply(config); // only the fireflies placed below
             config.fireflies.autumnColors = SeasonalMode.DISABLED; // year-round biome colours
             config.fireflies.maxCount = 400;
             if (!client.gui.hud.isHidden()) {

@@ -69,6 +69,11 @@ public final class AmbientSpawner {
     private static WeakReference<ClientLevel> lastLevel = new WeakReference<>(null);
     /** Development aid: -Dilluminations_reimagined.debugCounts=true logs live particle counts every 10 seconds. */
     private static final boolean DEBUG_COUNTS = Boolean.getBoolean("illuminations_reimagined.debugCounts");
+    /**
+     * Development aid: -Dilluminations_reimagined.profileSpawner=true times every sample (the terrain survey turns it on).
+     * Off by default, as reading the clock twice per sample is about 2,700 clock reads a tick.
+     */
+    private static final boolean PROFILE = Boolean.getBoolean("illuminations_reimagined.profileSpawner");
     private static int debugTimer;
     private static long timedNanos;
     private static int timedTicks;
@@ -96,7 +101,10 @@ public final class AmbientSpawner {
         }
     }
 
-    /** Average time the spawner spent per tick since the last reset, in microseconds (for profiling and tests). */
+    /**
+     * Average time the spawner spent per tick since the last reset, in microseconds (for profiling and tests). Always 0
+     * unless the profileSpawner property is set.
+     */
     public static double averageMicrosPerTick() {
         return timedTicks == 0 ? 0.0 : timedNanos / 1000.0 / timedTicks;
     }
@@ -112,14 +120,16 @@ public final class AmbientSpawner {
         if (!config.enabled || !config.isDimensionEnabled(level)) {
             return;
         }
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         POS.set(Mth.floor(sample.getX() + RANDOM.nextGaussian() * 50.0),
                 Mth.floor(sample.getY() + RANDOM.nextGaussian() * 25.0),
                 Mth.floor(sample.getZ() + RANDOM.nextGaussian() * 50.0));
         if (POS.getY() >= level.getMinY() && POS.getY() < level.getMaxY() && level.isLoaded(POS)) {
             spawnAt(level, config);
         }
-        timedNanos += System.nanoTime() - start;
+        if (PROFILE) {
+            timedNanos += System.nanoTime() - start;
+        }
     }
 
     private static void spawnAt(ClientLevel level, IlluminationsConfig config) {
@@ -150,15 +160,31 @@ public final class AmbientSpawner {
             ParticleTracker.spawn(new WillOWispParticle(level, POS.getX(), POS.getY(), POS.getZ()));
         }
         // Eyes ignore the density setting, as in the original.
-        if (WorldConditions.isHalloween(config.eyesInTheDark.mode) && RANDOM.nextFloat() <= EYES_CHANCE * config.eyesInTheDark.rate.multiplier
+        if (WorldConditions.isHalloween(config.eyesInTheDark.mode) && passes(RANDOM.nextFloat(), eyesChance(config.eyesInTheDark.rate))
                 && isEyesSpot(level, state) && ParticleTracker.hasRoom(ParticleKind.EYES)) {
             ParticleTracker.spawn(new EyesParticle(level, POS.getX() + 0.5, POS.getY() + 0.5, POS.getZ() + 0.5));
         }
     }
 
     private static boolean roll(float baseChance, SpawnRate rate, float density) {
-        float chance = baseChance * rate.multiplier;
-        return chance > 0.0F && RANDOM.nextFloat() <= chance * density;
+        return roll(RANDOM, baseChance, rate, density);
+    }
+
+    static boolean roll(RandomSource random, float baseChance, SpawnRate rate, float density) {
+        float chance = baseChance * rate.multiplier * density;
+        return chance > 0.0F && passes(random.nextFloat(), chance);
+    }
+
+    static float eyesChance(SpawnRate rate) {
+        return EYES_CHANCE * rate.multiplier;
+    }
+
+    /**
+     * Whether a roll in [0, 1) beats a spawn chance. Strict, so an effect that is off (chance 0) never spawns, even on a
+     * roll of exactly 0.
+     */
+    static boolean passes(float roll, float chance) {
+        return chance > 0.0F && roll < chance;
     }
 
     /** Open air at night under the sky; in dimensions with a fixed time, any air. */

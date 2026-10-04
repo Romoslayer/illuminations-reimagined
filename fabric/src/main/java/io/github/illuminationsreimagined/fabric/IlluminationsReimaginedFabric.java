@@ -22,6 +22,7 @@ import io.github.illuminationsreimagined.IlluminationsReimagined;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleGroupRegistry;
+import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
 import io.github.illuminationsreimagined.particle.GlowParticleGroup;
 import io.github.illuminationsreimagined.particle.SpiritParticleGroup;
 
@@ -30,6 +31,12 @@ public final class IlluminationsReimaginedFabric implements ClientModInitializer
     public void onInitializeClient() {
         IlluminationsReimagined.init();
         ClientTickEvents.END_CLIENT_TICK.register(IlluminationsReimagined::onClientTick);
+        // Also fires on the integrated server's thread for its own tags; only the client's copy matters here.
+        CommonLifecycleEvents.TAGS_LOADED.register((registries, client) -> {
+            if (client) {
+                IlluminationsReimagined.onClientTagsUpdated();
+            }
+        });
         ParticleGroupRegistry.register(SpiritParticleGroup.RENDER_TYPE, SpiritParticleGroup::new);
         ParticleGroupRegistry.register(GlowParticleGroup.RENDER_TYPE, GlowParticleGroup::new);
     }

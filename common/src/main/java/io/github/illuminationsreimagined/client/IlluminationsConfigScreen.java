@@ -51,7 +51,7 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
         this.list.addHeader(Component.translatable(key("section.general")));
         this.list.addSmall(
                 bool("enabled", c.enabled, v -> c.enabled = v),
-                slider("density", 0, 100, c.density / 10, v -> ConfigOptions.percent(v * 10), v -> c.density = v * 10));
+                slider("density", 0, IlluminationsConfig.MAX_DENSITY / 10, c.density / 10, v -> ConfigOptions.percent(v * 10), v -> c.density = v * 10));
         this.list.addSmall(
                 Button.builder(Component.translatable(key("biomes")),
                         b -> this.minecraft.gui.setScreen(new BiomeSettingsScreen(this))).build(),
@@ -70,12 +70,12 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
                 cycle("fireflies.autumnColors", SeasonalMode.class, ff.autumnColors, v -> ff.autumnColors = v),
                 slider("fireflies.coreBrightness", 0, 100, ff.coreBrightness, ConfigOptions::percent, v -> ff.coreBrightness = v));
         this.list.addSmall(
-                slider("maxCount", 0, 2000, ff.maxCount, ConfigOptions::number, v -> ff.maxCount = v));
+                slider("maxCount", 0, IlluminationsConfig.MAX_FIREFLIES, ff.maxCount, ConfigOptions::number, v -> ff.maxCount = v));
 
         this.list.addHeader(Component.translatable(key("section.glowwormsPlankton")));
         this.list.addSmall(
-                slider("glowworms.maxCount", 0, 2000, c.glowworms.maxCount, ConfigOptions::number, v -> c.glowworms.maxCount = v),
-                slider("plankton.maxCount", 0, 2000, c.plankton.maxCount, ConfigOptions::number, v -> c.plankton.maxCount = v));
+                slider("glowworms.maxCount", 0, IlluminationsConfig.MAX_GLOWWORMS, c.glowworms.maxCount, ConfigOptions::number, v -> c.glowworms.maxCount = v),
+                slider("plankton.maxCount", 0, IlluminationsConfig.MAX_PLANKTON, c.plankton.maxCount, ConfigOptions::number, v -> c.plankton.maxCount = v));
 
         IlluminationsConfig.Eyes eyes = c.eyesInTheDark;
         this.list.addHeader(Component.translatable(key("section.eyes")));
@@ -83,7 +83,7 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
                 cycle("eyes.mode", SeasonalMode.class, eyes.mode, v -> eyes.mode = v),
                 cycle("eyes.rate", SpawnRate.class, eyes.rate, v -> eyes.rate = v));
         this.list.addSmall(
-                slider("maxCount", 0, 50, eyes.maxCount, ConfigOptions::number, v -> eyes.maxCount = v));
+                slider("maxCount", 0, IlluminationsConfig.MAX_EYES, eyes.maxCount, ConfigOptions::number, v -> eyes.maxCount = v));
 
         IlluminationsConfig.WillOWisps wisps = c.willOWisps;
         this.list.addHeader(Component.translatable(key("section.wisps")));
@@ -91,13 +91,13 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
                 cycle("wisps.soulSandValleyRate", SpawnRate.class, wisps.soulSandValleyRate, v -> wisps.soulSandValleyRate = v),
                 bool("wisps.fromSoulLanterns", wisps.fromSoulLanterns, v -> wisps.fromSoulLanterns = v));
         this.list.addSmall(
-                slider("maxCount", 0, 50, wisps.maxCount, ConfigOptions::number, v -> wisps.maxCount = v));
+                slider("maxCount", 0, IlluminationsConfig.MAX_WISPS, wisps.maxCount, ConfigOptions::number, v -> wisps.maxCount = v));
 
         IlluminationsConfig.HalloweenSpirits spirits = c.halloweenSpirits;
         this.list.addHeader(Component.translatable(key("section.spirits")));
         this.list.addSmall(
                 cycle("spirits.mode", SeasonalMode.class, spirits.mode, v -> spirits.mode = v),
-                slider("maxCount", 0, 50, spirits.maxCount, ConfigOptions::number, v -> spirits.maxCount = v));
+                slider("spirits.maxCount", 0, IlluminationsConfig.MAX_HALLOWEEN_SPIRITS, spirits.maxCount, ConfigOptions::number, v -> spirits.maxCount = v));
         this.list.addSmall(
                 bool("spirits.fromJackOLanterns", spirits.fromJackOLanterns, v -> spirits.fromJackOLanterns = v),
                 bool("spirits.fromSkulls", spirits.fromSkulls, v -> spirits.fromSkulls = v));
@@ -110,8 +110,10 @@ public class IlluminationsConfigScreen extends OptionsSubScreen {
                 slider("chorus.multiplier", 0, 10, petals.multiplier, v -> Component.literal("×" + v), v -> petals.multiplier = v),
                 bool("chorus.burstOnBreak", petals.burstOnBreak, v -> petals.burstOnBreak = v));
         this.list.addSmall(
+                slider("chorus.maxCount", 0, IlluminationsConfig.MAX_CHORUS_PETALS, petals.maxCount, ConfigOptions::number, v -> petals.maxCount = v));
+        this.list.addSmall(
                 bool("prismarine.enabled", c.prismarineCrystals.enabled, v -> c.prismarineCrystals.enabled = v),
-                slider("prismarine.maxCount", 0, 2000, c.prismarineCrystals.maxCount, ConfigOptions::number, v -> c.prismarineCrystals.maxCount = v));
+                slider("prismarine.maxCount", 0, IlluminationsConfig.MAX_PRISMARINE_CRYSTALS, c.prismarineCrystals.maxCount, ConfigOptions::number, v -> c.prismarineCrystals.maxCount = v));
     }
 
     @Override

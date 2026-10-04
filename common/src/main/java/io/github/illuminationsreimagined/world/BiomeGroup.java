@@ -92,7 +92,7 @@ public enum BiomeGroup {
     private static final TagKey<Biome> C_IS_UNDERGROUND = conventionTag("is_underground");
 
     private static final Set<ResourceKey<Biome>> WARM_OCEANS = Set.of(Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN);
-    private static final Set<ResourceKey<Biome>> PLAINS_KEYS = Set.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS, Biomes.MEADOW);
+    private static final Set<ResourceKey<Biome>> PLAINS_KEYS = Set.of(Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS);
     private static final Set<ResourceKey<Biome>> SWAMP_KEYS = Set.of(Biomes.SWAMP, Biomes.MANGROVE_SWAMP);
 
     /** Classifies a biome. The order matters: more specific groups are tested first. */
@@ -141,6 +141,10 @@ public enum BiomeGroup {
         }
         if (biome.is(C_IS_DESERT) || biome.is(Biomes.DESERT)) {
             return DESERT;
+        }
+        // Vanilla tags meadows as mountains; they belong with plains ("Plains and Meadows" in the settings).
+        if (biome.is(Biomes.MEADOW)) {
+            return PLAINS;
         }
         if (biome.is(BiomeTags.IS_MOUNTAIN) || biome.is(BiomeTags.IS_HILL)) {
             return MOUNTAINS;

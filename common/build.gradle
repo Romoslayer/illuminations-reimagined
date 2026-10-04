@@ -10,6 +10,8 @@ neoForge {
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
+    // Unit tests use Minecraft classes (biomes, tags, random sources) without starting the game.
+    addModdingDependenciesTo(sourceSets.test)
 }
 
 dependencies {
@@ -21,6 +23,17 @@ dependencies {
     // Fabric and NeoForge both bundle MixinExtras, so it is safe to use it in common
     compileOnly(annotationProcessor('io.github.llamalad7:mixinextras-common:0.5.3'))
 
+    // Unit tests for logic that needs Minecraft classes but no running game (biome rules, spawn rolls, config).
+    testImplementation(platform('org.junit:junit-bom:5.12.2'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    // Minecraft's logger writes a logs/ folder into the working directory; keep it under build/.
+    workingDir = layout.buildDirectory.dir('test-run').get().asFile
+    doFirst { workingDir.mkdirs() }
 }
 
 configurations {

@@ -58,7 +58,7 @@ public class ShowcaseClientGameTest implements FabricClientGameTest {
         context.runOnClient(client -> {
             IlluminationsConfig.resetToDefaults();
             IlluminationsConfig config = IlluminationsConfig.get();
-            config.enabled = false; // nothing spawns on its own; the scene is placed by hand below
+            HandPlacedOnly.apply(config); // nothing spawns on its own; the scene is placed by hand below
             config.fireflies.autumnColors = SeasonalMode.DISABLED; // year-round green
             config.eyesInTheDark.mode = SeasonalMode.ALWAYS; // keep the eyes open whatever the date
             if (!client.gui.hud.isHidden()) {

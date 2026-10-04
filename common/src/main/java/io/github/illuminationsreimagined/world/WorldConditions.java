@@ -34,17 +34,15 @@ public final class WorldConditions {
     private static Level nightLevel;
     private static long nightGameTime;
     private static boolean night;
-    /** Biome → group cache. Biome instances are per-registry, so this is cleared whenever the level changes. */
-    private static final Map<Biome, BiomeGroup> GROUP_CACHE = new IdentityHashMap<>();
+    /**
+     * Biome → group cache. Holders are per-registry, so this is cleared whenever the level changes; the group depends on
+     * the biome's tags, so it is also cleared when the server sends new tags (a datapack {@code /reload}).
+     */
+    private static final Map<Holder<Biome>, BiomeGroup> GROUP_CACHE = new IdentityHashMap<>();
 
     private WorldConditions() {
     }
 
-    /**
-     * Whether it is dark outside. Uses the level's own sky-darkening value, which follows the dimension's clock and
-     * environment attributes, instead of the original hard-coded sun-angle range. Fixed-time dimensions such as the
-     * Nether and End are never "night".
-     */
     /**
      * Night as the original mod defined it: the sun between 0.2597 and 0.7403 of its daily arc (roughly ticks 13008 to
      * 22992). In fixed-time dimensions the original read the fixed sky angle, which made the Nether always night and the
@@ -81,12 +79,20 @@ public final class WorldConditions {
     }
 
     public static BiomeGroup biomeGroup(Level level, BlockPos pos) {
-        Holder<Biome> holder = level.getBiome(pos);
-        return GROUP_CACHE.computeIfAbsent(holder.value(), b -> BiomeGroup.classify(holder));
+        return biomeGroup(level.getBiome(pos));
+    }
+
+    public static BiomeGroup biomeGroup(Holder<Biome> biome) {
+        return GROUP_CACHE.computeIfAbsent(biome, BiomeGroup::classify);
     }
 
     public static void clearCaches() {
         GROUP_CACHE.clear();
         nightLevel = null;
+    }
+
+    /** The client received new tags from the server: biomes may belong to different groups now. Client thread only. */
+    public static void onTagsUpdated() {
+        GROUP_CACHE.clear();
     }
 }

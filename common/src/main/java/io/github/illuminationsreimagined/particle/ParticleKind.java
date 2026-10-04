@@ -29,9 +29,11 @@ public enum ParticleKind {
     PLANKTON(c -> c.plankton.maxCount),
     EYES(c -> c.eyesInTheDark.maxCount),
     WILL_O_WISP(c -> c.willOWisps.maxCount),
-    WISP_EMBER(c -> (c.willOWisps.maxCount + c.halloweenSpirits.maxCount) * 300),
+    /** Room for 300 trail sparks per spirit that may be alive: wisps, pumpkin spirits and poltergeists. */
+    WISP_EMBER(c -> (c.willOWisps.maxCount + 2 * c.halloweenSpirits.maxCount) * 300),
     CHORUS_PETAL(c -> c.chorusPetals.maxCount),
     PRISMARINE_CRYSTAL(c -> c.prismarineCrystals.maxCount),
+    // The Halloween cap applies to each spirit type separately.
     PUMPKIN_SPIRIT(c -> c.halloweenSpirits.maxCount),
     POLTERGEIST(c -> c.halloweenSpirits.maxCount);
 

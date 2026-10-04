@@ -20,6 +20,7 @@ package io.github.illuminationsreimagined.particle;
 
 import io.github.illuminationsreimagined.config.IlluminationsConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -40,6 +41,8 @@ public final class ParticleTracker {
 
     private static final Map<ParticleKind, List<AmbientParticle>> LIVE = new EnumMap<>(ParticleKind.class);
     private static long tick;
+    private static boolean effectsEnabled = true;
+    private static long effectsCheckedAt = -1;
 
     static {
         for (ParticleKind kind : ParticleKind.values()) {
@@ -52,6 +55,20 @@ public final class ParticleTracker {
 
     static long currentTick() {
         return tick;
+    }
+
+    /**
+     * Whether effects are allowed in the level (the master switch and the dimension's switch). Read from the config once
+     * per tick, so live particles vanish on the first tick after either switch goes off, including the first tick after
+     * the game is unpaused.
+     */
+    static boolean effectsEnabled(ClientLevel level) {
+        if (effectsCheckedAt != tick) {
+            effectsCheckedAt = tick;
+            IlluminationsConfig config = IlluminationsConfig.get();
+            effectsEnabled = config.enabled && config.isDimensionEnabled(level);
+        }
+        return effectsEnabled;
     }
 
     /** Called once per client tick, only while the particle engine itself is ticking. */
@@ -103,5 +120,6 @@ public final class ParticleTracker {
 
     public static void clear() {
         LIVE.values().forEach(List::clear);
+        effectsCheckedAt = -1;
     }
 }
