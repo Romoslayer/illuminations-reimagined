@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 — unreleased
+## 0.1.1 — 2026-10-04 (Minecraft 26.2 / 26.3, Fabric + NeoForge)
 
 ### Fixed
 - Meadows used the Mountains and Hills settings (vanilla also tags them as mountains); they now follow Plains and
