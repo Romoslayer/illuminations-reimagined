@@ -1,12 +1,10 @@
 # Changelog
 
-## 0.1.2 — unreleased
+## 0.1.1 — 2026-10-04 (Minecraft 26.2 / 26.3, Fabric + NeoForge; Forge added 2026-10-05)
 
 ### Added
 - Forge builds for Minecraft 26.2 (Forge 65) and 26.3 (Forge 66), alongside Fabric and NeoForge, with the same
   effects, settings and config file. The settings screen opens from the Config button in Forge's Mods list.
-
-## 0.1.1 — 2026-10-04 (Minecraft 26.2 / 26.3, Fabric + NeoForge)
 
 ### Fixed
 - Meadows used the Mountains and Hills settings (vanilla also tags them as mountains); they now follow Plains and
