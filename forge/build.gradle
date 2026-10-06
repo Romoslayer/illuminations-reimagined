@@ -1,0 +1,65 @@
+plugins {
+    id 'multiloader-common'
+    id 'net.minecraftforge.gradle'
+}
+
+minecraft {
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('runs/client')
+            // Dev runs load classes from folders, so Mixin can't read the config from the jar manifest.
+            args "--mixin.config=${mod_id}.mixins.json"
+        }
+        // Client-only mod: no server run configuration.
+        register('client') {
+            // -PquickPlayWorld=<save name> joins that singleplayer world straight away (smoke testing).
+            if (project.hasProperty('quickPlayWorld')) {
+                args '--quickPlaySingleplayer', project.property('quickPlayWorld').toString()
+                systemProperty('illuminations_reimagined.debugCounts', 'true')
+            }
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+}
+
+// The shared code comes straight from common/ (dev runs need everything compiled into this project's own folders).
+sourceSets.main.java.srcDir project(':common').file('src/main/java')
+
+processResources {
+    // Shared assets, lang and mixin config; Forge gets its own pack.mcmeta with this Minecraft version's formats.
+    // (multiloader-common fills in the ${...} values of pack.mcmeta, mods.toml and the mixin config.)
+    from(project(':common').file('src/main/resources')) {
+        exclude 'pack.mcmeta'
+    }
+    // Forge ships upstream Mixin 0.8.7, whose newest compatibility level is Java 21 (Fabric's and NeoForge's know 25).
+    filesMatching("${mod_id}.mixins.json") {
+        filter { it.replace('"compatibilityLevel": "JAVA_25"', '"compatibilityLevel": "JAVA_21"') }
+    }
+}
+
+jar {
+    // Forge reads the mixin config from the manifest.
+    manifest {
+        attributes 'MixinConfigs': "${mod_id}.mixins.json"
+    }
+}
+
+// Implement mcgradleconventions loader attribute
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
+    configurations.named(variant) {
+        attributes {
+            attribute(loaderAttribute, 'forge')
+        }
+    }
+}

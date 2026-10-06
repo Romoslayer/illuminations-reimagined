@@ -1,7 +1,7 @@
 # Illuminations Reimagined
 
 **An unofficial modern continuation of [Illuminations](https://github.com/Ladysnake/Illuminations) by Ladysnake,
-updated for modern Minecraft on Fabric and NeoForge, with bug fixes, rewritten systems and all-new artwork.**
+updated for modern Minecraft on Fabric, NeoForge and Forge, with bug fixes, rewritten systems and all-new artwork.**
 
 > ⚠️ This project is **not** affiliated with, maintained by, or endorsed by Ladysnake or the original
 > Illuminations developers. Please report issues here, not to them.
@@ -28,10 +28,10 @@ It works on any server, including vanilla servers, and nothing needs to be insta
 
 ## Supported versions
 
-| Minecraft | Fabric Loader | Fabric API | NeoForge |
-|---|---|---|---|
-| 26.3 | ≥ 0.19.5 | 0.161.0+26.3 | 26.3.0.43-beta |
-| 26.2 | ≥ 0.19.5 | 0.161.0+26.2 | 26.2.0.88 |
+| Minecraft | Fabric Loader | Fabric API | NeoForge | Forge |
+|---|---|---|---|---|
+| 26.3 | ≥ 0.19.5 | 0.161.0+26.3 | 26.3.0.43-beta | 66 (built with 26.3-66.0.9) |
+| 26.2 | ≥ 0.19.5 | 0.161.0+26.2 | 26.2.0.88 | 65 (built with 26.2-65.1.3) |
 
 Java 25 is required, as for Minecraft 26.x itself.
 
@@ -83,8 +83,8 @@ blinking, movement and lifetime, and the default settings for each biome.
 ./gradlew build -Pmc=26.2  # Minecraft 26.2
 ```
 
-Jars are written to `fabric/build/libs/` and `neoforge/build/libs/`. Version-specific dependency versions live
-in `versions/<mc>.properties`.
+Jars are written to `fabric/build/libs/`, `neoforge/build/libs/` and `forge/build/libs/`. Version-specific
+dependency versions live in `versions/<mc>.properties`.
 
 ## Licensing
 

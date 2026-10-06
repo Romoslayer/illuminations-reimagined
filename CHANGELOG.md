@@ -2,7 +2,9 @@
 
 ## 0.1.2 — unreleased
 
-No player-facing changes yet.
+### Added
+- Forge builds for Minecraft 26.2 (Forge 65) and 26.3 (Forge 66), alongside Fabric and NeoForge, with the same
+  effects, settings and config file. The settings screen opens from the Config button in Forge's Mods list.
 
 ## 0.1.1 — 2026-10-04 (Minecraft 26.2 / 26.3, Fabric + NeoForge)
 
